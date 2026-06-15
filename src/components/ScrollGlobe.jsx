@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Globe from './Globe';
 import { useScroll, useMotionValueEvent } from 'framer-motion';
+import { StarsBackground } from '@/components/ui/stars';
 
 const SECTION_POVS = [
   { lat: 20.5937, lng: 78.9629, altitude: 0.8 }, // 0: Hero
@@ -47,10 +48,12 @@ export default function ScrollGlobe({ children }) {
   const globeOpacity = currentSection === 6 ? 0.1 : 1;
 
   return (
-    <div className="relative w-full bg-[#020617] text-white">
+    <div className="relative w-full text-white">
       {/* Fixed Globe Background */}
-      <div className="fixed top-0 left-0 w-full h-screen pointer-events-none z-0">
-        <Globe ref={globeRef} opacity={globeOpacity} />
+      <div className="fixed top-0 left-0 w-full h-screen z-0">
+        <StarsBackground speed={20} factor={0.05}>
+          <Globe ref={globeRef} opacity={globeOpacity} />
+        </StarsBackground>
       </div>
 
       {/* Scrollable Content */}
