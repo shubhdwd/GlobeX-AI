@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExportPilot AI - Virtual Export Growth Team</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">ExportPilot AI</div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#analyzer">Market Analyzer</a></li>
+            <li><a href="#" class="btn-primary">Get Early Access</a></li>
+        </ul>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Making chance one container at a time</h1>
+            <p>Your AI-Powered Virtual Export Growth Team. We actively find global buyers, analyze market demand, ensure compliance, and automate outreach for Indian exporters and MSMEs.</p>
+            <div class="cta-group">
+                <a href="#dashboard" class="btn-primary btn-large">See How It Works</a>
+                <a href="#analyzer" class="btn-secondary btn-large">Try Market Analyzer</a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="glow-orb"></div>
+            <!-- Interactive CSS Globe Placeholder -->
+            <div class="globe-container">
+                <div class="pulse-ring"></div>
+                <div class="pulse-ring delay-1"></div>
+                <div class="pulse-ring delay-2"></div>
+                <i class='bx bx-world globe-icon'></i>
+            </div>
+        </div>
+    </header>
+
+    <section id="analyzer" class="analyzer-section">
+        <div class="section-header">
+            <h2>AI Market Opportunity Analyzer</h2>
+            <p>Discover the top global markets for your products in seconds.</p>
+        </div>
+        <div class="analyzer-container glass-panel">
+            <div class="search-tabs">
+                <button class="tab-btn active" data-search-type="product">Search by Product</button>
+                <button class="tab-btn" data-search-type="hsn">Search by HSN Code</button>
+            </div>
+            <div class="search-form">
+                <div class="input-group" id="product-input-group">
+                    <i class='bx bx-search'></i>
+                    <input type="text" id="product-input" placeholder="e.g. Handicrafts, Spices, Textiles...">
+                </div>
+                <div class="input-group hidden" id="hsn-input-group">
+                    <i class='bx bx-barcode'></i>
+                    <input type="text" id="hsn-input" placeholder="Enter HSN Code (e.g. 0904, 5208...)">
+                </div>
+                <button class="btn-primary" id="analyze-btn">Analyze Potential</button>
+            </div>
+            <div id="analyzer-results" class="analyzer-results hidden">
+                <div class="loader">
+                    <div class="spinner"></div>
+                    <p>AI is analyzing global trade data...</p>
+                </div>
+                <div class="results-content hidden">
+                    <h3>Top Recommended Markets</h3>
+                    <div class="market-cards">
+                        <div class="market-card">
+                            <span class="flag">🇺🇸</span>
+                            <h4>United States</h4>
+                            <div class="stat">Demand: <span class="high">High</span></div>
+                            <div class="stat">Avg Margin: <span>35%</span></div>
+                            <div class="stat">Compliance: <span>FDA Req.</span></div>
+                        </div>
+                        <div class="market-card">
+                            <span class="flag">🇦🇪</span>
+                            <h4>UAE</h4>
+                            <div class="stat">Demand: <span class="high">Very High</span></div>
+                            <div class="stat">Avg Margin: <span>28%</span></div>
+                            <div class="stat">Compliance: <span>Halal Cert.</span></div>
+                        </div>
+                        <div class="market-card">
+                            <span class="flag">🇩🇪</span>
+                            <h4>Germany</h4>
+                            <div class="stat">Demand: <span class="medium">Medium</span></div>
+                            <div class="stat">Avg Margin: <span>42%</span></div>
+                            <div class="stat">Compliance: <span>CE Mark</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="dashboard" class="dashboard-section">
+        <div class="section-header">
+            <h2>Your Virtual Export Team</h2>
+            <p>A comprehensive suite of AI tools to drive your international growth.</p>
+        </div>
+        <div class="dashboard-container">
+            <div class="dashboard-sidebar">
+                <button class="dash-nav-item active" data-target="buyer">
+                    <i class='bx bx-user-pin'></i> Global Buyer Discovery
+                </button>
+                <button class="dash-nav-item" data-target="outreach">
+                    <i class='bx bx-envelope'></i> Smart Outreach
+                </button>
+                <button class="dash-nav-item" data-target="compliance">
+                    <i class='bx bx-check-shield'></i> Compliance Assistant
+                </button>
+                <button class="dash-nav-item" data-target="analytics">
+                    <i class='bx bx-line-chart'></i> Export Analytics
+                </button>
+            </div>
+            <div class="dashboard-content glass-panel">
+                <div id="buyer" class="dash-view active">
+                    <h3>Global Buyer Database</h3>
+                    <table class="buyer-table">
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Country</th>
+                                <th>Import Intent</th>
+                                <th>Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Global Spices Inc.</td>
+                                <td>USA</td>
+                                <td><span class="badge intent-high">High</span></td>
+                                <td><button class="btn-small">Connect</button></td>
+                            </tr>
+                            <tr>
+                                <td>EuroTextiles GmbH</td>
+                                <td>Germany</td>
+                                <td><span class="badge intent-medium">Medium</span></td>
+                                <td><button class="btn-small">Connect</button></td>
+                            </tr>
+                            <tr>
+                                <td>Dubai Trading Co.</td>
+                                <td>UAE</td>
+                                <td><span class="badge intent-high">High</span></td>
+                                <td><button class="btn-small">Connect</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="outreach" class="dash-view hidden">
+                    <h3>Smart Email Generator</h3>
+                    <div class="email-mockup">
+                        <div class="email-header">
+                            <div><strong>To:</strong> purchasing@globalspices.com</div>
+                            <div><strong>Subject:</strong> Premium Indian Spices Direct Supply Proposal</div>
+                        </div>
+                        <div class="email-body">
+                            <p>Hi Sarah,</p>
+                            <p>I noticed Global Spices Inc. has recently expanded its organic spice line. As a leading exporter from India with ISO and USDA certifications, we can supply premium cardamom and black pepper at 15% better margins than your current European suppliers.</p>
+                            <p>Would you be open to a brief call next week to discuss potential supply volumes?</p>
+                            <p>Best regards,<br>ExportPilot AI User</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="compliance" class="dash-view hidden">
+                    <h3>Compliance Readiness Checklist: USA</h3>
+                    <ul class="checklist">
+                        <li class="checked"><i class='bx bx-check-circle'></i> Commercial Invoice Prepared</li>
+                        <li class="checked"><i class='bx bx-check-circle'></i> Packing List Verified</li>
+                        <li class="pending"><i class='bx bx-time'></i> FDA Prior Notice (Required for Food)</li>
+                        <li class="pending"><i class='bx bx-time'></i> Certificate of Origin</li>
+                    </ul>
+                </div>
+                <div id="analytics" class="dash-view hidden">
+                    <h3>Pipeline & Opportunity Score</h3>
+                    <div class="analytics-mockup">
+                        <div class="stat-box">
+                            <span class="stat-value">12</span>
+                            <span class="stat-label">Active Leads</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value">$145k</span>
+                            <span class="stat-label">Pipeline Value</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value">UAE</span>
+                            <span class="stat-label">Top Opportunity</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features-section">
+        <div class="section-header">
+            <h2>Everything You Need to Export</h2>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class='bx bx-world'></i>
+                <h3>Global Buyer Discovery</h3>
+                <p>Find potential importers, distributors, and wholesalers worldwide.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-line-chart'></i>
+                <h3>Market Opportunity Analysis</h3>
+                <p>Identify countries with high demand and analyze growth trends.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-user-check'></i>
+                <h3>AI Lead Qualification</h3>
+                <p>Score and prioritize potential buyers based on credibility.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-envelope'></i>
+                <h3>Smart Outreach Generator</h3>
+                <p>Generate personalized emails and LinkedIn messages automatically.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-radar'></i>
+                <h3>Competitor Intelligence</h3>
+                <p>Track competitor pricing and discover market gaps.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-check-shield'></i>
+                <h3>Export Compliance Assistant</h3>
+                <p>Check required certifications and country-specific regulations.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-dollar-circle'></i>
+                <h3>Pricing Advisor</h3>
+                <p>Suggested export pricing and profit margin analysis.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-calendar-event'></i>
+                <h3>Trade Fair Finder</h3>
+                <p>Recommend international expos and buyer-seller meets.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-error'></i>
+                <h3>Country Risk Analysis</h3>
+                <p>Insights on import restrictions, tariffs, and economic risk.</p>
+            </div>
+            <div class="feature-card">
+                <i class='bx bx-dashboard'></i>
+                <h3>Analytics Dashboard</h3>
+                <p>Track lead pipeline, opportunity scores, and sales metrics.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h2>ExportPilot AI</h2>
+                <p>Making chance one container at a time.</p>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </div>
+        <p class="copyright">© 2024 ExportPilot AI. All rights reserved.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
