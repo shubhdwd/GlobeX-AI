@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cinematic-black: #020617;
+  --color-cinematic-blue: #0f172a;
+  --color-neon-blue: #38bdf8;
+  --color-gold: #fbbf24;
+
+  --animate-spin-slow: spin 30s linear infinite;
+  --animate-pulse-glow: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.8));
+    }
+    50% {
+      opacity: 0.5;
+      filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.4));
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+}
+
+body {
+  background-color: var(--color-cinematic-black);
+  color: white;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
