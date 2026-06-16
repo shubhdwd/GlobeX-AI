@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Globe from './Globe';
-import { useScroll, useMotionValueEvent } from 'framer-motion';
 import { StarsBackground } from '@/components/ui/stars';
 
 const SECTION_POVS = [
