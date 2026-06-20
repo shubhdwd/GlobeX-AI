@@ -46,7 +46,7 @@ const Globe = forwardRef(({ opacity = 1 }, ref) => {
         globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
         backgroundColor="rgba(0,0,0,0)"
-        
+
         arcsData={arcsData}
         arcColor="color"
         arcDashLength={ARC_REL_LEN}
@@ -54,7 +54,7 @@ const Globe = forwardRef(({ opacity = 1 }, ref) => {
         arcDashInitialGap={() => Math.random()}
         arcDashAnimateTime={FLIGHT_TIME}
         arcsTransitionDuration={1000}
-        
+
         labelsData={[INDIA, ...HUBS]}
         labelLat={d => d.lat}
         labelLng={d => d.lng}
