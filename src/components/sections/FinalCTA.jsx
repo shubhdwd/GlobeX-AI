@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export default function FinalCTA() {
+export default function FinalCTA({ onOpenAuth }) {
   return (
     <section className="min-h-screen w-full flex items-center justify-center px-4 bg-[#020617]/80 backdrop-blur-sm z-20 relative">
       <div className="w-full max-w-4xl z-10 text-center">
@@ -26,7 +26,11 @@ export default function FinalCTA() {
           transition={{ delay: 0.4 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-6"
         >
-          <button className="bg-[#38bdf8] hover:bg-sky-400 text-slate-900 font-bold py-4 px-10 rounded-full text-xl transition-all shadow-[0_0_25px_rgba(56,189,248,0.6)]">
+          <button
+            id="cta-free-trial-btn"
+            onClick={onOpenAuth}
+            className="bg-[#38bdf8] hover:bg-sky-400 text-slate-900 font-bold py-4 px-10 rounded-full text-xl transition-all shadow-[0_0_25px_rgba(56,189,248,0.6)]"
+          >
             Start Your Free Trial
           </button>
           <button className="bg-transparent hover:bg-white/5 text-white font-semibold py-4 px-10 rounded-full text-xl transition-all border border-slate-600">
@@ -37,3 +41,4 @@ export default function FinalCTA() {
     </section>
   );
 }
+

@@ -1,12 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search } from 'lucide-react';
 
-export default function Hero() {
+export default function Hero({ onOpenAuth }) {
   return (
     <section className="h-screen w-full flex items-center justify-center pt-20 px-4">
       <div className="max-w-4xl w-full text-center z-10 glass-panel p-8 md:p-12 rounded-3xl">
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
@@ -14,7 +13,7 @@ export default function Hero() {
         >
           Making chance one container at a time
         </motion.h1>
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -27,21 +26,21 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="max-w-xl mx-auto"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <div className="relative flex items-center">
-            <Search className="absolute left-4 text-slate-400 w-5 h-5" />
-            <input 
-              type="text" 
-              placeholder="Search with HSN Code (e.g. 100630)" 
-              className="w-full bg-[#0f172a]/80 border border-slate-700 text-white rounded-full py-4 pl-12 pr-32 focus:outline-none focus:ring-2 focus:ring-[#38bdf8] transition-all"
-            />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#38bdf8] hover:bg-sky-400 text-slate-900 font-semibold py-2 px-6 rounded-full transition-all shadow-[0_0_15px_rgba(56,189,248,0.5)]">
-              Analyze
-            </button>
-          </div>
+          <button
+            id="hero-free-trial-btn"
+            onClick={onOpenAuth}
+            className="bg-[#38bdf8] hover:bg-sky-400 text-slate-900 font-bold py-3 px-8 rounded-full text-lg transition-all shadow-[0_0_20px_rgba(56,189,248,0.5)]"
+          >
+            Start Your Free Trial
+          </button>
+          <button className="bg-transparent hover:bg-white/5 text-white font-semibold py-3 px-8 rounded-full text-lg transition-all border border-slate-600">
+            Watch Demo
+          </button>
         </motion.div>
       </div>
     </section>
   );
 }
+

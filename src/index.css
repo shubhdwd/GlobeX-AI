@@ -6,6 +6,65 @@
   --color-neon-blue: #38bdf8;
   --color-gold: #fbbf24;
 
+  /* ── Typography ─────────────────────────────────────────────────────── */
+  --font-sans: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  --font-weight-regular:    400; /* Body text, paragraphs          */
+  --font-weight-medium:     500; /* Labels, secondary headings     */
+  --font-weight-semibold:   600; /* Strong emphasis, badges        */
+  --font-weight-bold:       700; /* Primary headings, CTAs         */
+  --font-weight-extrabold:  800; /* Main headings, hero text       */
+
+  /* Font-size scale */
+  --text-h1:      clamp(2rem,   4vw, 3.6rem);  /* H1 Hero: 2rem → 3.6rem  */
+  --text-h2:      clamp(1.6rem, 3vw, 2.8rem);  /* H2 Section: 1.6rem → 2.8rem */
+  --text-h3:      1.15rem;                     /* H3 Card                 */
+  --text-h4:      0.95rem;                     /* H4 Route                */
+  --text-body:    1rem;                        /* P Body                  */
+  --text-sub:     1.05rem;                     /* P Sub                   */
+  --text-label:   0.8rem;                      /* Label                   */
+  --text-badge:   0.75rem;                     /* Badge (min)             */
+  --text-small:   0.75rem;                     /* Small                   */
+  --text-xsmall:  0.7rem;                      /* Xsmall                  */
+  --text-caption: 0.72rem;                     /* Caption                 */
+
+  /* Text Colors */
+  --color-text-primary: rgba(232, 244, 255, 1);    /* #e8f4ff — Main text */
+  --color-text-secondary: rgba(232, 244, 255, 0.6); /* #e8f4ff @ 60% — Muted */
+  --color-text-tertiary: rgba(232, 244, 255, 0.35); /* #e8f4ff @ 35% — Hints */
+  --color-text-black: #000000;                      /* Only for light backgrounds */
+
+  /* ── Component Tokens ─────────────────────────────────────────────────── */
+
+  /* Navbar */
+  --color-navbar-bg: rgba(4, 13, 26, 0.85);         /* Navy #040d1a @ 85% */
+
+  /* Buttons */
+  --color-btn-primary-from: #00d4ff;                /* Cyan */
+  --color-btn-primary-to:   #0066ff;                /* Blue */
+  --color-btn-secondary-border: #00d4ff;            /* Cyan border */
+
+  /* Cards & Input Fields */
+  --color-glass-surface: rgba(255, 255, 255, 0.05); /* Frosted glass bg */
+  --color-glass-border:  rgba(255, 255, 255, 0.08); /* Subtle border */
+
+  /* Modals */
+  --color-modal-bg:     #071428;                    /* Navy 2 */
+  --color-modal-border: #00d4ff;                    /* Cyan accent border */
+
+  /* Links */
+  --color-link-hover: #00d4ff;                      /* Cyan */
+
+  /* Agent Badge Colors */
+  --color-agent-cyan:   rgba(0,  212, 255, 0.15);
+  --color-agent-green:  rgba(0,  255, 136, 0.15);
+  --color-agent-gold:   rgba(251, 191, 36,  0.15);
+  --color-agent-purple: rgba(168, 85,  247, 0.15);
+
+  /* Glows & Shadows */
+  --color-glow-soft:   rgba(0, 212, 255, 0.3);
+  --color-glow-strong: rgba(0, 212, 255, 0.6);
+
   --animate-spin-slow: spin 30s linear infinite;
   --animate-pulse-glow: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-shimmer: shimmer 2s linear infinite;
@@ -33,12 +92,151 @@
 
 body {
   background-color: var(--color-cinematic-black);
-  color: white;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   margin: 0;
   overflow-x: hidden;
 }
 
-/* Glassmorphism utility */
+/* ── Type Scale — Element Defaults ──────────────────────────────────────── */
+h1 {
+  font-size: var(--text-h1);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin: 0;
+}
+
+h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+h3 {
+  font-size: var(--text-h3);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0;
+  line-height: 1.35;
+  margin: 0;
+}
+
+h4 {
+  font-size: var(--text-h4);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0;
+  line-height: 1.4;
+  margin: 0;
+}
+
+p {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Type Scale — Utility Classes ───────────────────────────────────────── */
+
+/* Weight helpers (kept for direct overrides) */
+.text-body    { font-weight: var(--font-weight-regular);   }
+.text-label   { font-weight: var(--font-weight-medium);    }
+.text-strong  { font-weight: var(--font-weight-semibold);  }
+.text-heading { font-weight: var(--font-weight-bold);      }
+.text-display { font-weight: var(--font-weight-extrabold); }
+
+/* Full type-level classes */
+.type-h1 {
+  font-size: var(--text-h1);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+}
+
+.type-h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -1px;
+  line-height: 1.15;
+}
+
+.type-h3 {
+  font-size: var(--text-h3);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0;
+}
+
+.type-h4 {
+  font-size: var(--text-h4);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0;
+}
+
+.type-body {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.7;
+}
+
+.type-sub {
+  font-size: var(--text-sub);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.7;
+}
+
+.type-label {
+  font-size: var(--text-label);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.type-badge {
+  font-size: var(--text-badge);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.type-small {
+  font-size: var(--text-small);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.6;
+}
+
+.type-xsmall {
+  font-size: var(--text-xsmall);
+  font-weight: var(--font-weight-regular);
+}
+
+.type-caption {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.5px;
+}
+
+/* ── Mobile Adjustments (≤ 768px) ───────────────────────────────────────────── */
+/* Overriding token values means all element defaults AND .type-* classes     */
+/* automatically inherit the mobile sizes — no duplication needed.            */
+@media (max-width: 768px) {
+  :root {
+    --text-h1:   clamp(2rem,  6vw, 2.4rem);  /* 2rem – 2.4rem on mobile  */
+    --text-h2:   clamp(1.6rem, 5vw, 2rem);   /* 1.6rem – 2rem on mobile  */
+    --text-h3:   1rem;                        /* flat 1rem                */
+    --text-body: 0.95rem;                     /* slight tightening        */
+    --text-sub:  1rem;                        /* matches body on mobile   */
+    /* label, badge, small, xsmall, caption stay the same (0.7–0.8rem) */
+  }
+}
+
+/* ── Glassmorphism (generic) ──────────────────────────────────────────── */
 .glass-panel {
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(12px);
@@ -46,3 +244,106 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
+
+/* ── Navbar ───────────────────────────────────────────────────────────── */
+.navbar {
+  background: var(--color-navbar-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-btn-primary-from), var(--color-btn-primary-to));
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 20px var(--color-glow-soft);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-btn-primary-from);
+  border: 1px solid var(--color-btn-secondary-border);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-secondary:hover {
+  background: rgba(0, 212, 255, 0.08);
+  box-shadow: 0 0 16px var(--color-glow-soft);
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--color-glass-surface);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Input Fields ─────────────────────────────────────────────────────── */
+.input-field {
+  background: var(--color-glass-surface);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input-field::placeholder {
+  color: var(--color-text-tertiary);
+}
+.input-field:focus {
+  outline: none;
+  border-color: rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 12px var(--color-glow-soft);
+}
+
+/* ── Modals ───────────────────────────────────────────────────────────── */
+.modal {
+  background: var(--color-modal-bg);
+  border: 1px solid var(--color-modal-border);
+  border-radius: 16px;
+  box-shadow: 0 0 40px var(--color-glow-soft);
+}
+
+/* ── Links ────────────────────────────────────────────────────────────── */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: var(--color-link-hover);
+}
+
+/* ── Agent Badges ─────────────────────────────────────────────────────── */
+.badge-cyan   { background: var(--color-agent-cyan);   color: #00d4ff; border: 1px solid rgba(0,  212, 255, 0.3); }
+.badge-green  { background: var(--color-agent-green);  color: #00ff88; border: 1px solid rgba(0,  255, 136, 0.3); }
+.badge-gold   { background: var(--color-agent-gold);   color: #fbbf24; border: 1px solid rgba(251, 191, 36,  0.3); }
+.badge-purple { background: var(--color-agent-purple); color: #a855f7; border: 1px solid rgba(168, 85,  247, 0.3); }
+
+.badge-cyan, .badge-green, .badge-gold, .badge-purple {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ── Glows & Shadows ──────────────────────────────────────────────────── */
+.glow-soft   { box-shadow: 0 0 20px var(--color-glow-soft);   }
+.glow-strong { box-shadow: 0 0 40px var(--color-glow-strong); }
+.text-glow   { text-shadow: 0 0 20px var(--color-glow-soft);  }
