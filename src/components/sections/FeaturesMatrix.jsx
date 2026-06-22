@@ -3,38 +3,62 @@ import { motion } from 'framer-motion';
 import { Globe2, TrendingUp, Users, ShieldCheck } from 'lucide-react';
 
 const features = [
-  { icon: Globe2, title: 'Global Discovery', desc: 'Find active buyers in 150+ countries instantly.' },
-  { icon: TrendingUp, title: 'Demand Forecasting', desc: 'Predict which markets will grow for your products.' },
-  { icon: Users, title: 'Buyer Intelligence', desc: 'Detailed contact profiles and trade histories of importers.' },
-  { icon: ShieldCheck, title: 'Compliance Guide', desc: 'Navigate complex international export regulations easily.' }
+  { icon: Globe2, title: 'Global Discovery', desc: 'Find active buyers in 150+ countries instantly with real-time customs data.' },
+  { icon: TrendingUp, title: 'Demand Forecasting', desc: 'Predict which markets will grow for your products using AI predictive models.' },
+  { icon: Users, title: 'Buyer Intelligence', desc: 'Detailed contact profiles, trade histories, and reliability scores of importers.' },
+  { icon: ShieldCheck, title: 'Compliance Guide', desc: 'Navigate complex international export regulations and tariffs easily.' }
 ];
 
 export default function FeaturesMatrix() {
   return (
-    <section className="min-h-screen w-full flex items-center justify-center px-4">
-      <div className="w-full max-w-5xl z-10">
-        <motion.h2 
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          className="text-4xl md:text-5xl font-bold mb-16 text-center text-white"
-        >
-          AI-Powered Export Intelligence
-        </motion.h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <section id="features" className="w-full py-24 px-6 md:px-12 bg-[#040d1a]/75">
+      <div className="max-w-6xl mx-auto z-10">
+        
+        <div className="text-center mb-16">
+          <motion.span
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="type-label text-[#00d4ff] bg-[#00d4ff]/10 px-3 py-1 rounded-full mb-4 inline-block"
+          >
+            OUR PLATFORM
+          </motion.span>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            viewport={{ once: true }}
+            className="type-h2 text-white mb-4"
+          >
+            AI-Powered Export Intelligence
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            viewport={{ once: true }}
+            className="type-sub text-slate-400 max-w-2xl mx-auto"
+          >
+            Everything you need to find buyers, analyze competitors, and scale your export business globally.
+          </motion.p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {features.map((feat, idx) => (
             <motion.div 
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className="glass-panel p-8 rounded-3xl flex items-start gap-6 hover:bg-[#0f172a]/80 transition-colors border border-slate-700/50"
+              viewport={{ once: true, margin: "-50px" }}
+              className="card p-8 flex items-start gap-6 hover:-translate-y-1 transition-all duration-300 group hover:shadow-[0_0_30px_rgba(0,212,255,0.15)]"
             >
-              <div className="bg-[#38bdf8]/20 p-4 rounded-2xl text-[#38bdf8]">
+              <div className="bg-slate-800/50 p-4 rounded-2xl text-[#00d4ff] border border-slate-700/50 group-hover:bg-[#00d4ff]/10 group-hover:border-[#00d4ff]/30 transition-colors">
                 <feat.icon size={32} />
               </div>
               <div>
-                <h3 className="text-2xl font-semibold text-white mb-2">{feat.title}</h3>
-                <p className="text-slate-400 text-lg">{feat.desc}</p>
+                <h3 className="type-h3 text-white mb-2 group-hover:text-[#00d4ff] transition-colors">{feat.title}</h3>
+                <p className="type-body text-slate-400">{feat.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -43,3 +67,4 @@ export default function FeaturesMatrix() {
     </section>
   );
 }
+

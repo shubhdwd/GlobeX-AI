@@ -65,28 +65,43 @@
   --color-glow-soft:   rgba(0, 212, 255, 0.3);
   --color-glow-strong: rgba(0, 212, 255, 0.6);
 
-  --animate-spin-slow: spin 30s linear infinite;
-  --animate-pulse-glow: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-spin-slow:       spin          30s  linear                    infinite;
+  --animate-pulse-glow:      pulse-glow    2s   cubic-bezier(0.4,0,0.6,1) infinite;
+  --animate-pulse-glow-gold: pulse-glow-g  2.4s cubic-bezier(0.4,0,0.6,1) infinite;
+  --animate-shimmer:         shimmer       2s   linear                    infinite;
+  --animate-particle:        particle-flow 3s   ease-in-out               infinite;
+  --animate-counter:         counter-tick  0.4s ease-out                  forwards;
+  --animate-heatmap:         heatmap-rev   1.2s ease-out                  forwards;
 
   @keyframes pulse-glow {
-    0%, 100% {
-      opacity: 1;
-      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.8));
-    }
-    50% {
-      opacity: 0.5;
-      filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.4));
-    }
+    0%, 100% { opacity: 1;   filter: drop-shadow(0 0 10px rgba(0,  212, 255, 0.8)); }
+    50%       { opacity: 0.5; filter: drop-shadow(0 0 2px  rgba(0,  212, 255, 0.3)); }
+  }
+
+  @keyframes pulse-glow-g {
+    0%, 100% { opacity: 1;   filter: drop-shadow(0 0 12px rgba(251, 191, 36,  0.8)); }
+    50%       { opacity: 0.5; filter: drop-shadow(0 0 3px  rgba(251, 191, 36,  0.3)); }
   }
 
   @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  @keyframes particle-flow {
+    0%   { transform: translateX(0%)   translateY(0%)   scale(1);   opacity: 1; }
+    50%  { transform: translateX(40%)  translateY(-20%) scale(1.2); opacity: 0.7; }
+    100% { transform: translateX(100%) translateY(-40%) scale(0.8); opacity: 0; }
+  }
+
+  @keyframes counter-tick {
+    from { transform: translateY(8px);  opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  @keyframes heatmap-rev {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0% 0 0);   }
   }
 }
 
@@ -347,3 +362,57 @@ a:hover {
 .glow-soft   { box-shadow: 0 0 20px var(--color-glow-soft);   }
 .glow-strong { box-shadow: 0 0 40px var(--color-glow-strong); }
 .text-glow   { text-shadow: 0 0 20px var(--color-glow-soft);  }
+
+/* ── Trade Route Particle ─────────────────────────────────────────────── */
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00d4ff;
+  box-shadow: 0 0 8px 2px rgba(0, 212, 255, 0.7);
+  animation: var(--animate-particle);
+  pointer-events: none;
+}
+.particle-gold   { background: #fbbf24; box-shadow: 0 0 8px 2px rgba(251, 191, 36,  0.7); }
+.particle-purple { background: #a855f7; box-shadow: 0 0 8px 2px rgba(168, 85,  247, 0.7); }
+.particle-green  { background: #00ff88; box-shadow: 0 0 8px 2px rgba(0,  255, 136, 0.7); }
+.particle-red    { background: #f43f5e; box-shadow: 0 0 8px 2px rgba(244, 63,  94,  0.7); }
+
+/* ── Shimmer Loading Skeleton ─────────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(0, 212, 255, 0.08)   50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* ── Animated Counter ─────────────────────────────────────────────────── */
+.counter-animate {
+  display: inline-block;
+  animation: var(--animate-counter);
+}
+
+/* ── Heatmap Reveal ───────────────────────────────────────────────────── */
+.heatmap-reveal {
+  animation: var(--animate-heatmap);
+}
+
+/* ── Spin-slow orbit ring ─────────────────────────────────────────────── */
+.animate-spin-slow {
+  animation: var(--animate-spin-slow);
+}
+
+/* ── Pulse-glow (cyan) ────────────────────────────────────────────────── */
+.animate-pulse-glow {
+  animation: var(--animate-pulse-glow);
+}
+
+/* ── Pulse-glow (gold) ────────────────────────────────────────────────── */
+.animate-pulse-glow-gold {
+  animation: var(--animate-pulse-glow-gold);
+}
