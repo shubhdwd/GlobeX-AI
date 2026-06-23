@@ -22,6 +22,7 @@ build/
 coverage/
 out/
 frontend/dist/
+.vite/
 
 # IDE and Editor
 .vscode/
