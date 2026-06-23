@@ -1,116 +1,68 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cinematic-black: #020617;
-  --color-cinematic-blue: #0f172a;
-  --color-neon-blue: #38bdf8;
-  --color-gold: #fbbf24;
+  /* ── Volza-Style Enterprise Palette ──────────────────────────────────── */
+  --color-navy:        #0F172A;
+  --color-navy-light:  #1E293B;
+  --color-blue:        #2563EB;
+  --color-blue-dark:   #1D4ED8;
+  --color-blue-light:  #3B82F6;
+  --color-blue-pale:   #EFF6FF;
+  --color-emerald:     #059669;
+  --color-emerald-light: #10B981;
+  --color-orange:      #F59E0B;
+  --color-red:         #EF4444;
+
+  --color-bg-white:    #FFFFFF;
+  --color-bg-light:    #F5F7FA;
+  --color-bg-gray:     #F1F5F9;
+
+  --color-text-primary:   #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted:     #64748B;
+  --color-text-light:     #94A3B8;
+
+  --color-border:      #E2E8F0;
+  --color-border-dark: #CBD5E1;
 
   /* ── Typography ─────────────────────────────────────────────────────── */
-  --font-sans: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-sans: 'Inter', 'IBM Plex Sans', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  --font-weight-regular:    400; /* Body text, paragraphs          */
-  --font-weight-medium:     500; /* Labels, secondary headings     */
-  --font-weight-semibold:   600; /* Strong emphasis, badges        */
-  --font-weight-bold:       700; /* Primary headings, CTAs         */
-  --font-weight-extrabold:  800; /* Main headings, hero text       */
+  --font-weight-regular:   400;
+  --font-weight-medium:    500;
+  --font-weight-semibold:  600;
+  --font-weight-bold:      700;
 
-  /* Font-size scale */
-  --text-h1:      clamp(2rem,   4vw, 3.6rem);  /* H1 Hero: 2rem → 3.6rem  */
-  --text-h2:      clamp(1.6rem, 3vw, 2.8rem);  /* H2 Section: 1.6rem → 2.8rem */
-  --text-h3:      1.15rem;                     /* H3 Card                 */
-  --text-h4:      0.95rem;                     /* H4 Route                */
-  --text-body:    1rem;                        /* P Body                  */
-  --text-sub:     1.05rem;                     /* P Sub                   */
-  --text-label:   0.8rem;                      /* Label                   */
-  --text-badge:   0.75rem;                     /* Badge (min)             */
-  --text-small:   0.75rem;                     /* Small                   */
-  --text-xsmall:  0.7rem;                      /* Xsmall                  */
-  --text-caption: 0.72rem;                     /* Caption                 */
+  --text-h1:      clamp(1.75rem, 3vw, 2.5rem);
+  --text-h2:      clamp(1.375rem, 2.5vw, 1.875rem);
+  --text-h3:      1.125rem;
+  --text-h4:      1rem;
+  --text-body:    0.9375rem;
+  --text-sub:     1.0625rem;
+  --text-label:   0.75rem;
+  --text-small:   0.8125rem;
+  --text-caption: 0.6875rem;
 
-  /* Text Colors */
-  --color-text-primary: rgba(232, 244, 255, 1);    /* #e8f4ff — Main text */
-  --color-text-secondary: rgba(232, 244, 255, 0.6); /* #e8f4ff @ 60% — Muted */
-  --color-text-tertiary: rgba(232, 244, 255, 0.35); /* #e8f4ff @ 35% — Hints */
-  --color-text-black: #000000;                      /* Only for light backgrounds */
-
-  /* ── Component Tokens ─────────────────────────────────────────────────── */
-
-  /* Navbar */
-  --color-navbar-bg: rgba(4, 13, 26, 0.85);         /* Navy #040d1a @ 85% */
-
-  /* Buttons */
-  --color-btn-primary-from: #00d4ff;                /* Cyan */
-  --color-btn-primary-to:   #0066ff;                /* Blue */
-  --color-btn-secondary-border: #00d4ff;            /* Cyan border */
-
-  /* Cards & Input Fields */
-  --color-glass-surface: rgba(255, 255, 255, 0.05); /* Frosted glass bg */
-  --color-glass-border:  rgba(255, 255, 255, 0.08); /* Subtle border */
-
-  /* Modals */
-  --color-modal-bg:     #071428;                    /* Navy 2 */
-  --color-modal-border: #00d4ff;                    /* Cyan accent border */
-
-  /* Links */
-  --color-link-hover: #00d4ff;                      /* Cyan */
-
-  /* Agent Badge Colors */
-  --color-agent-cyan:   rgba(0,  212, 255, 0.15);
-  --color-agent-green:  rgba(0,  255, 136, 0.15);
-  --color-agent-gold:   rgba(251, 191, 36,  0.15);
-  --color-agent-purple: rgba(168, 85,  247, 0.15);
-
-  /* Glows & Shadows */
-  --color-glow-soft:   rgba(0, 212, 255, 0.3);
-  --color-glow-strong: rgba(0, 212, 255, 0.6);
-
-  --animate-spin-slow:       spin          30s  linear                    infinite;
-  --animate-pulse-glow:      pulse-glow    2s   cubic-bezier(0.4,0,0.6,1) infinite;
-  --animate-pulse-glow-gold: pulse-glow-g  2.4s cubic-bezier(0.4,0,0.6,1) infinite;
-  --animate-shimmer:         shimmer       2s   linear                    infinite;
-  --animate-particle:        particle-flow 3s   ease-in-out               infinite;
-  --animate-counter:         counter-tick  0.4s ease-out                  forwards;
-  --animate-heatmap:         heatmap-rev   1.2s ease-out                  forwards;
-
-  @keyframes pulse-glow {
-    0%, 100% { opacity: 1;   filter: drop-shadow(0 0 10px rgba(0,  212, 255, 0.8)); }
-    50%       { opacity: 0.5; filter: drop-shadow(0 0 2px  rgba(0,  212, 255, 0.3)); }
-  }
-
-  @keyframes pulse-glow-g {
-    0%, 100% { opacity: 1;   filter: drop-shadow(0 0 12px rgba(251, 191, 36,  0.8)); }
-    50%       { opacity: 0.5; filter: drop-shadow(0 0 3px  rgba(251, 191, 36,  0.3)); }
-  }
-
-  @keyframes shimmer {
-    0%   { background-position: -200% 0; }
-    100% { background-position:  200% 0; }
-  }
-
-  @keyframes particle-flow {
-    0%   { transform: translateX(0%)   translateY(0%)   scale(1);   opacity: 1; }
-    50%  { transform: translateX(40%)  translateY(-20%) scale(1.2); opacity: 0.7; }
-    100% { transform: translateX(100%) translateY(-40%) scale(0.8); opacity: 0; }
-  }
-
-  @keyframes counter-tick {
-    from { transform: translateY(8px);  opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-
-  @keyframes heatmap-rev {
-    from { clip-path: inset(0 100% 0 0); }
-    to   { clip-path: inset(0 0% 0 0);   }
-  }
+  /* ── Component Tokens ───────────────────────────────────────────────── */
+  --color-navbar-bg:        #FFFFFF;
+  --color-btn-primary-bg:   #2563EB;
+  --color-btn-primary-hover:#1D4ED8;
+  --color-card-bg:          #FFFFFF;
+  --color-card-border:      #E5E7EB;
+  --color-input-bg:         #FFFFFF;
+  --color-input-border:     #D1D5DB;
+  --color-modal-bg:         #FFFFFF;
 }
 
+/* ── Reset ────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
 body {
-  background-color: var(--color-cinematic-black);
+  background-color: #FFFFFF;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
-  font-weight: var(--font-weight-regular);
-  font-size: 16px;
+  font-weight: 400;
+  font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -118,301 +70,201 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Type Scale — Element Defaults ──────────────────────────────────────── */
-h1 {
-  font-size: var(--text-h1);
-  font-weight: var(--font-weight-extrabold);
-  letter-spacing: -1.5px;
-  line-height: 1.1;
-  margin: 0;
-}
+/* ── Typography Defaults ──────────────────────────────────────────────── */
+h1 { font-size: var(--text-h1); font-weight: 600; letter-spacing: -0.3px; line-height: 1.25; margin: 0; color: var(--color-text-primary); }
+h2 { font-size: var(--text-h2); font-weight: 600; letter-spacing: -0.2px; line-height: 1.3; margin: 0; color: var(--color-text-primary); }
+h3 { font-size: var(--text-h3); font-weight: 600; line-height: 1.4; margin: 0; color: var(--color-text-primary); }
+h4 { font-size: var(--text-h4); font-weight: 600; line-height: 1.4; margin: 0; color: var(--color-text-primary); }
+p  { font-size: var(--text-body); font-weight: 400; line-height: 1.65; margin: 0; color: var(--color-text-secondary); }
 
-h2 {
-  font-size: var(--text-h2);
-  font-weight: var(--font-weight-extrabold);
-  letter-spacing: -1px;
-  line-height: 1.15;
-  margin: 0;
-}
+/* ── Type Utility Classes ─────────────────────────────────────────────── */
+.type-h1      { font-size: var(--text-h1); font-weight: 600; letter-spacing: -0.3px; line-height: 1.25; color: var(--color-text-primary); }
+.type-h2      { font-size: var(--text-h2); font-weight: 600; letter-spacing: -0.2px; line-height: 1.3; color: var(--color-text-primary); }
+.type-h3      { font-size: var(--text-h3); font-weight: 600; line-height: 1.4; color: var(--color-text-primary); }
+.type-body    { font-size: var(--text-body); font-weight: 400; line-height: 1.65; color: var(--color-text-secondary); }
+.type-sub     { font-size: var(--text-sub); font-weight: 400; line-height: 1.6; color: var(--color-text-muted); }
+.type-label   { font-size: var(--text-label); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); }
+.type-small   { font-size: var(--text-small); font-weight: 400; line-height: 1.5; color: var(--color-text-muted); }
+.type-caption { font-size: var(--text-caption); font-weight: 500; color: var(--color-text-light); }
+.type-strong  { font-weight: 600; color: var(--color-text-primary); }
 
-h3 {
-  font-size: var(--text-h3);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
-  line-height: 1.35;
-  margin: 0;
-}
-
-h4 {
-  font-size: var(--text-h4);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
-  line-height: 1.4;
-  margin: 0;
-}
-
-p {
-  font-size: var(--text-body);
-  font-weight: var(--font-weight-regular);
-  line-height: 1.7;
-  margin: 0;
-}
-
-/* ── Type Scale — Utility Classes ───────────────────────────────────────── */
-
-/* Weight helpers (kept for direct overrides) */
-.text-body    { font-weight: var(--font-weight-regular);   }
-.text-label   { font-weight: var(--font-weight-medium);    }
-.text-strong  { font-weight: var(--font-weight-semibold);  }
-.text-heading { font-weight: var(--font-weight-bold);      }
-.text-display { font-weight: var(--font-weight-extrabold); }
-
-/* Full type-level classes */
-.type-h1 {
-  font-size: var(--text-h1);
-  font-weight: var(--font-weight-extrabold);
-  letter-spacing: -1.5px;
-  line-height: 1.1;
-}
-
-.type-h2 {
-  font-size: var(--text-h2);
-  font-weight: var(--font-weight-extrabold);
-  letter-spacing: -1px;
-  line-height: 1.15;
-}
-
-.type-h3 {
-  font-size: var(--text-h3);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
-}
-
-.type-h4 {
-  font-size: var(--text-h4);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
-}
-
-.type-body {
-  font-size: var(--text-body);
-  font-weight: var(--font-weight-regular);
-  line-height: 1.7;
-}
-
-.type-sub {
-  font-size: var(--text-sub);
-  font-weight: var(--font-weight-regular);
-  line-height: 1.7;
-}
-
-.type-label {
-  font-size: var(--text-label);
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.type-badge {
-  font-size: var(--text-badge);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.type-small {
-  font-size: var(--text-small);
-  font-weight: var(--font-weight-regular);
-  line-height: 1.6;
-}
-
-.type-xsmall {
-  font-size: var(--text-xsmall);
-  font-weight: var(--font-weight-regular);
-}
-
-.type-caption {
-  font-size: var(--text-caption);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.5px;
-}
-
-/* ── Mobile Adjustments (≤ 768px) ───────────────────────────────────────────── */
-/* Overriding token values means all element defaults AND .type-* classes     */
-/* automatically inherit the mobile sizes — no duplication needed.            */
+/* ── Mobile ───────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   :root {
-    --text-h1:   clamp(2rem,  6vw, 2.4rem);  /* 2rem – 2.4rem on mobile  */
-    --text-h2:   clamp(1.6rem, 5vw, 2rem);   /* 1.6rem – 2rem on mobile  */
-    --text-h3:   1rem;                        /* flat 1rem                */
-    --text-body: 0.95rem;                     /* slight tightening        */
-    --text-sub:  1rem;                        /* matches body on mobile   */
-    /* label, badge, small, xsmall, caption stay the same (0.7–0.8rem) */
+    --text-h1: clamp(1.5rem, 5vw, 1.875rem);
+    --text-h2: clamp(1.25rem, 4vw, 1.5rem);
+    --text-h3: 1rem;
+    --text-body: 0.875rem;
+    --text-sub: 0.9375rem;
   }
-}
-
-/* ── Glassmorphism (generic) ──────────────────────────────────────────── */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Navbar ───────────────────────────────────────────────────────────── */
 .navbar {
-  background: var(--color-navbar-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* ── Buttons ──────────────────────────────────────────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-btn-primary-from), var(--color-btn-primary-to));
-  color: #000;
+  background: var(--color-btn-primary-bg);
+  color: #FFFFFF;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
   cursor: pointer;
-  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.15s ease;
 }
 .btn-primary:hover {
-  opacity: 0.9;
-  box-shadow: 0 0 20px var(--color-glow-soft);
+  background: var(--color-btn-primary-hover);
 }
 
 .btn-secondary {
   background: transparent;
-  color: var(--color-btn-primary-from);
-  border: 1px solid var(--color-btn-secondary-border);
-  border-radius: 8px;
+  color: var(--color-blue);
+  border: 1px solid var(--color-border-dark);
+  border-radius: 4px;
   font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 .btn-secondary:hover {
-  background: rgba(0, 212, 255, 0.08);
-  box-shadow: 0 0 16px var(--color-glow-soft);
+  background: var(--color-bg-light);
+  border-color: var(--color-blue);
 }
 
-/* ── Cards ────────────────────────────────────────────────────────────── */
+/* ── Volza-style Feature Card ─────────────────────────────────────────── */
+.feature-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.feature-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+.feature-card .icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.feature-card .icon-wrap svg {
+  color: #2563EB;
+}
+.feature-card .card-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0F172A;
+  margin-bottom: 4px;
+}
+.feature-card .card-desc {
+  font-size: 0.8125rem;
+  color: #64748B;
+  line-height: 1.55;
+}
+
+/* ── Enterprise Card ──────────────────────────────────────────────────── */
 .card {
-  background: var(--color-glass-surface);
-  border: 1px solid var(--color-glass-border);
-  border-radius: 12px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  transition: box-shadow 0.15s ease;
+}
+.card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Data Table ───────────────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.data-table thead th {
+  background: #F5F7FA;
+  color: #64748B;
+  font-weight: 600;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #E5E7EB;
+}
+.data-table tbody td {
+  padding: 10px 12px;
+  color: #334155;
+  border-bottom: 1px solid #F1F5F9;
+}
+.data-table tbody tr:hover {
+  background: #F8FAFC;
 }
 
 /* ── Input Fields ─────────────────────────────────────────────────────── */
 .input-field {
-  background: var(--color-glass-surface);
-  border: 1px solid var(--color-glass-border);
-  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
   color: var(--color-text-primary);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.input-field::placeholder {
-  color: var(--color-text-tertiary);
-}
+.input-field::placeholder { color: var(--color-text-light); }
 .input-field:focus {
   outline: none;
-  border-color: rgba(0, 212, 255, 0.5);
-  box-shadow: 0 0 12px var(--color-glow-soft);
-}
-
-/* ── Modals ───────────────────────────────────────────────────────────── */
-.modal {
-  background: var(--color-modal-bg);
-  border: 1px solid var(--color-modal-border);
-  border-radius: 16px;
-  box-shadow: 0 0 40px var(--color-glow-soft);
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
 /* ── Links ────────────────────────────────────────────────────────────── */
-a {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-a:hover {
-  color: var(--color-link-hover);
-}
+a { color: inherit; text-decoration: none; transition: color 0.15s ease; }
 
-/* ── Agent Badges ─────────────────────────────────────────────────────── */
-.badge-cyan   { background: var(--color-agent-cyan);   color: #00d4ff; border: 1px solid rgba(0,  212, 255, 0.3); }
-.badge-green  { background: var(--color-agent-green);  color: #00ff88; border: 1px solid rgba(0,  255, 136, 0.3); }
-.badge-gold   { background: var(--color-agent-gold);   color: #fbbf24; border: 1px solid rgba(251, 191, 36,  0.3); }
-.badge-purple { background: var(--color-agent-purple); color: #a855f7; border: 1px solid rgba(168, 85,  247, 0.3); }
-
-.badge-cyan, .badge-green, .badge-gold, .badge-purple {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+/* ── Section Container ────────────────────────────────────────────────── */
+.section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+@media (min-width: 768px) {
+  .section-container { padding: 0 40px; }
+}
+@media (min-width: 1280px) {
+  .section-container { padding: 0 24px; }
 }
 
-/* ── Glows & Shadows ──────────────────────────────────────────────────── */
-.glow-soft   { box-shadow: 0 0 20px var(--color-glow-soft);   }
-.glow-strong { box-shadow: 0 0 40px var(--color-glow-strong); }
-.text-glow   { text-shadow: 0 0 20px var(--color-glow-soft);  }
-
-/* ── Trade Route Particle ─────────────────────────────────────────────── */
-.particle {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #00d4ff;
-  box-shadow: 0 0 8px 2px rgba(0, 212, 255, 0.7);
-  animation: var(--animate-particle);
-  pointer-events: none;
-}
-.particle-gold   { background: #fbbf24; box-shadow: 0 0 8px 2px rgba(251, 191, 36,  0.7); }
-.particle-purple { background: #a855f7; box-shadow: 0 0 8px 2px rgba(168, 85,  247, 0.7); }
-.particle-green  { background: #00ff88; box-shadow: 0 0 8px 2px rgba(0,  255, 136, 0.7); }
-.particle-red    { background: #f43f5e; box-shadow: 0 0 8px 2px rgba(244, 63,  94,  0.7); }
-
-/* ── Shimmer Loading Skeleton ─────────────────────────────────────────── */
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    rgba(0, 212, 255, 0.08)   50%,
-    rgba(255, 255, 255, 0.03) 100%
-  );
-  background-size: 200% 100%;
-  animation: var(--animate-shimmer);
+/* ── Section Divider ──────────────────────────────────────────────────── */
+.section-divider {
+  border: none;
+  border-top: 1px solid #E5E7EB;
+  margin: 0;
 }
 
-/* ── Animated Counter ─────────────────────────────────────────────────── */
-.counter-animate {
-  display: inline-block;
-  animation: var(--animate-counter);
-}
+/* ── Animated Counter (kept) ──────────────────────────────────────────── */
+.counter-animate { display: inline-block; }
 
-/* ── Heatmap Reveal ───────────────────────────────────────────────────── */
-.heatmap-reveal {
-  animation: var(--animate-heatmap);
+/* ── Scroll fade-in ───────────────────────────────────────────────────── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
-
-/* ── Spin-slow orbit ring ─────────────────────────────────────────────── */
-.animate-spin-slow {
-  animation: var(--animate-spin-slow);
-}
-
-/* ── Pulse-glow (cyan) ────────────────────────────────────────────────── */
-.animate-pulse-glow {
-  animation: var(--animate-pulse-glow);
-}
-
-/* ── Pulse-glow (gold) ────────────────────────────────────────────────── */
-.animate-pulse-glow-gold {
-  animation: var(--animate-pulse-glow-gold);
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
 }

@@ -1,112 +1,96 @@
-import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, forwardRef } from 'react';
 import GlobeGL from 'react-globe.gl';
 
-/* ── City Definitions ───────────────────────────────────────────────────── */
+/* ── Trade Route Endpoints ──────────────────────────────────────────── */
 const CITIES = {
-  mumbai:    { lat: 19.0760, lng: 72.8777, label: 'Mumbai',    color: '#00d4ff' },
-  newYork:   { lat: 40.7128, lng: -74.0060, label: 'New York', color: '#a855f7' },
-  frankfurt: { lat: 50.1109, lng: 8.6821,  label: 'Frankfurt', color: '#00ff88' },
-  dubai:     { lat: 25.2048, lng: 55.2708, label: 'Dubai',     color: '#fbbf24' },
-  tokyo:     { lat: 35.6762, lng: 139.6503, label: 'Tokyo',    color: '#f43f5e' },
+  mumbai:    { lat: 19.0760, lng: 72.8777,   label: 'Mumbai' },
+  newYork:   { lat: 40.7128, lng: -74.0060,  label: 'New York' },
+  frankfurt: { lat: 50.1109, lng: 8.6821,    label: 'Frankfurt' },
+  dubai:     { lat: 25.2048, lng: 55.2708,   label: 'Dubai' },
+  tokyo:     { lat: 35.6762, lng: 139.6503,  label: 'Tokyo' },
 };
 
-/* ── Trade Routes: India (Mumbai) → World ───────────────────────────────── */
+/* ── Trade Routes from India ─────────────────────────────────────────── */
 const TRADE_ROUTES = [
   {
-    startLat: CITIES.mumbai.lat,    startLng: CITIES.mumbai.lng,
-    endLat:   CITIES.newYork.lat,   endLng:   CITIES.newYork.lng,
-    color: ['#00d4ff', '#a855f7'],
-    label: 'India → USA',
+    startLat: CITIES.mumbai.lat, startLng: CITIES.mumbai.lng,
+    endLat: CITIES.newYork.lat,  endLng: CITIES.newYork.lng,
+    color: ['#2563EB', '#60A5FA'],
   },
   {
-    startLat: CITIES.mumbai.lat,    startLng: CITIES.mumbai.lng,
-    endLat:   CITIES.frankfurt.lat, endLng:   CITIES.frankfurt.lng,
-    color: ['#00d4ff', '#00ff88'],
-    label: 'India → Germany',
+    startLat: CITIES.mumbai.lat, startLng: CITIES.mumbai.lng,
+    endLat: CITIES.frankfurt.lat, endLng: CITIES.frankfurt.lng,
+    color: ['#2563EB', '#059669'],
   },
   {
-    startLat: CITIES.mumbai.lat,    startLng: CITIES.mumbai.lng,
-    endLat:   CITIES.dubai.lat,     endLng:   CITIES.dubai.lng,
-    color: ['#00d4ff', '#fbbf24'],
-    label: 'India → UAE',
+    startLat: CITIES.mumbai.lat, startLng: CITIES.mumbai.lng,
+    endLat: CITIES.dubai.lat,    endLng: CITIES.dubai.lng,
+    color: ['#2563EB', '#0EA5E9'],
   },
   {
-    startLat: CITIES.mumbai.lat,    startLng: CITIES.mumbai.lng,
-    endLat:   CITIES.tokyo.lat,     endLng:   CITIES.tokyo.lng,
-    color: ['#00d4ff', '#f43f5e'],
-    label: 'India → Japan',
+    startLat: CITIES.mumbai.lat, startLng: CITIES.mumbai.lng,
+    endLat: CITIES.tokyo.lat,    endLng: CITIES.tokyo.lng,
+    color: ['#2563EB', '#8B5CF6'],
   },
 ];
 
-/* ── Hub Points (glowing dots) ──────────────────────────────────────────── */
+/* ── Hub Points ──────────────────────────────────────────────────────── */
 const HUB_POINTS = Object.values(CITIES).map(c => ({
-  lat:   c.lat,
-  lng:   c.lng,
+  lat: c.lat,
+  lng: c.lng,
   label: c.label,
-  color: c.color,
-  size:  c.label === 'Mumbai' ? 0.6 : 0.4,
+  color: c.label === 'Mumbai' ? '#059669' : '#2563EB',
+  size: c.label === 'Mumbai' ? 0.5 : 0.35,
 }));
 
-/* ── Labels ─────────────────────────────────────────────────────────────── */
+/* ── Labels ──────────────────────────────────────────────────────────── */
 const LABELS = Object.values(CITIES).map(c => ({
-  lat:   c.lat,
-  lng:   c.lng,
-  text:  c.label,
-  color: c.color,
-  size:  c.label === 'Mumbai' ? 1.4 : 1.0,
-  dot:   c.label === 'Mumbai' ? 0.6 : 0.4,
+  lat: c.lat,
+  lng: c.lng,
+  text: c.label,
+  color: '#334155',
+  size: c.label === 'Mumbai' ? 1.2 : 0.9,
+  dot: c.label === 'Mumbai' ? 0.5 : 0.35,
 }));
 
-/* ── Component ──────────────────────────────────────────────────────────── */
-const Globe = forwardRef(({ opacity = 1, size }, ref) => {
+/* ── Globe Component ─────────────────────────────────────────────────── */
+const Globe = forwardRef(({ width, height }, ref) => {
   const globeEl = useRef();
-
-  useImperativeHandle(ref, () => ({
-    setPointOfView: (pov, duration) => {
-      if (globeEl.current) globeEl.current.pointOfView(pov, duration);
-    },
-  }));
 
   useEffect(() => {
     if (!globeEl.current) return;
     const controls = globeEl.current.controls();
-    controls.autoRotate      = true;
-    controls.autoRotateSpeed = 0.35;   // slow, subtle drift
-    controls.enableZoom      = false;
-    controls.enablePan       = false;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.3;
+    controls.enableZoom = false;
+    controls.enablePan = false;
+    controls.enableRotate = false;
+
+    // Set initial point of view to show India
+    globeEl.current.pointOfView({ lat: 20, lng: 78, altitude: 2.2 }, 0);
   }, []);
 
-  /* Dimensions: use prop or fill container */
-  const dim = size ?? undefined;
-
   return (
-    <div
-      style={{ opacity, transition: 'opacity 1.2s ease-in-out' }}
-      className="absolute inset-0 z-0 pointer-events-none"
-    >
+    <div className="w-full h-full">
       <GlobeGL
         ref={globeEl}
-        width={dim}
-        height={dim}
-
-        /* Globe appearance */
-        globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
+        width={width}
+        height={height}
+        globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-        atmosphereColor="rgba(0, 180, 255, 0.6)"
-        atmosphereAltitude={0.18}
+        atmosphereColor="rgba(37, 99, 235, 0.25)"
+        atmosphereAltitude={0.15}
         backgroundColor="rgba(0,0,0,0)"
 
-        /* ── Trade Route Arcs ── */
         arcsData={TRADE_ROUTES}
         arcColor="color"
-        arcDashLength={0.35}
-        arcDashGap={0.15}
+        arcDashLength={0.4}
+        arcDashGap={0.2}
         arcDashInitialGap={() => Math.random() * 2}
-        arcDashAnimateTime={2200}
-        arcStroke={0.5}
+        arcDashAnimateTime={2500}
+        arcStroke={0.4}
         arcsTransitionDuration={800}
 
-        /* ── Glowing Hub Points ── */
         pointsData={HUB_POINTS}
         pointLat="lat"
         pointLng="lng"
@@ -116,7 +100,6 @@ const Globe = forwardRef(({ opacity = 1, size }, ref) => {
         pointsMerge={false}
         pointsTransitionDuration={500}
 
-        /* ── City Labels ── */
         labelsData={LABELS}
         labelLat="lat"
         labelLng="lng"
@@ -133,4 +116,3 @@ const Globe = forwardRef(({ opacity = 1, size }, ref) => {
 
 Globe.displayName = 'Globe';
 export default Globe;
-
