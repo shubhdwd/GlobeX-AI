@@ -1,0 +1,139 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# GlobeX AI — Local Development Stack
+# Run: docker-compose up -d
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: globex-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: globex_ai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── ChromaDB — Vector Database for RAG ──────────────────────────────────────
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: globex-chromadb
+    ports:
+      - "8001:8000"            # Host 8001 → Container 8000 (avoids conflict with ai-agent)
+    environment:
+      CHROMA_SERVER_AUTH_PROVIDER: ""      # No auth in dev; enable token auth in prod
+      ANONYMIZED_TELEMETRY: "false"
+      IS_PERSISTENT: "true"
+      PERSIST_DIRECTORY: /chroma/data
+    volumes:
+      - chroma_data:/chroma/data           # Persists embeddings across restarts
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:8000/api/v1/heartbeat || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: globex-backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      API_VERSION: v1
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/globex_ai
+      JWT_SECRET: dev-secret-key-change-in-production-min-32-chars-long
+      JWT_REFRESH_SECRET: dev-refresh-secret-key-change-in-production-min-32
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
+      LOG_LEVEL: debug
+      # ChromaDB connection (points to the chromadb service above)
+      CHROMA_HOST: http://chromadb:8000
+      CHROMA_COLLECTION: globex_docs
+      # Featherless LLM (inject via .env or CI secret)
+      FEATHERLESS_API_KEY: ${FEATHERLESS_API_KEY}
+      LLM_MODEL: ${LLM_MODEL:-mistralai/Mistral-7B-Instruct-v0.3}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Python AI Agent Service
+  ai-agent:
+    build:
+      context: ./ai-agent
+      dockerfile: Dockerfile
+    container_name: globex-ai-agent
+    ports:
+      - "8000:8000"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      GEMINI_MODEL: gemini-2.5-flash-preview-05-20
+      # Point to the shared ChromaDB service (container-internal address)
+      CHROMA_HOST: http://chromadb:8000
+      CHROMA_PERSIST_DIR: ./database/chroma_db
+      CHROMA_COLLECTION_NAME: globex_trade_knowledge
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      APP_ENV: development
+      DEBUG: "true"
+      DATABASE_URL: sqlite+aiosqlite:///./database/globex_memory.db
+      LOG_LEVEL: INFO
+    volumes:
+      - ./ai-agent:/app
+    depends_on:
+      - postgres
+      - chromadb
+
+  # Optional: Adminer for database UI (visit http://localhost:8080)
+  adminer:
+    image: adminer:latest
+    container_name: globex-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  chroma_data:                         # Named volume for ChromaDB persistence
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Usage:
+#   docker-compose up -d                        # Start all services
+#   docker-compose down                          # Stop all services
+#   docker-compose logs -f backend               # View backend logs
+#   docker-compose logs -f chromadb              # View ChromaDB logs
+#   docker-compose exec backend npm run index-docs  # Index documents into ChromaDB
+#   docker-compose exec backend npm run db:seed  # Seed data
+#   docker-compose ps                            # Show running services
+#
+# ChromaDB UI (no official GUI, use curl to inspect):
+#   curl http://localhost:8001/api/v1/collections
+# ─────────────────────────────────────────────────────────────────────────────

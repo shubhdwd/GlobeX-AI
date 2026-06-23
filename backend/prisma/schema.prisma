@@ -1,0 +1,284 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// GlobeX AI — Prisma Schema
+// Complete database design for the export growth platform
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  FOLLOW_UP
+  NEGOTIATION
+  CONVERTED
+  LOST
+}
+
+enum OutreachStatus {
+  DRAFT
+  SENT
+  OPENED
+  REPLIED
+}
+
+enum NotificationType {
+  LEAD_UPDATE
+  BUYER_MATCH
+  COMPLIANCE_ALERT
+  SYSTEM
+  AI_INSIGHT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          Role      @default(USER)
+  companyName   String
+  companyType   String    // e.g. "Manufacturer", "Trader", "MSME"
+  industry      String    // e.g. "Textiles", "Spices", "Engineering"
+  isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  refreshToken  String?
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  products      Product[]
+  leads         Lead[]
+  outreaches    Outreach[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  opportunities Opportunity[]
+
+  @@index([email])
+  @@index([industry])
+  @@map("users")
+}
+
+// ─── Product ─────────────────────────────────────────────────────────────────
+
+model Product {
+  id               String   @id @default(uuid())
+  userId           String
+  productName      String
+  category         String
+  description      String   @db.Text
+  hsCode           String?  // Harmonized System code for customs
+  targetCountries  String[] // Array of country codes e.g. ["US","DE","AE"]
+  unitPrice        Float?
+  currency         String   @default("USD")
+  certifications   String[] // e.g. ["ISO 9001", "FSSAI", "BIS"]
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leads            Lead[]
+  opportunities    Opportunity[]
+
+  @@index([userId])
+  @@index([category])
+  @@map("products")
+}
+
+// ─── Buyer ───────────────────────────────────────────────────────────────────
+
+model Buyer {
+  id           String   @id @default(uuid())
+  companyName  String
+  country      String
+  countryCode  String   // ISO 2-letter code
+  industry     String
+  website      String?
+  email        String?
+  phone        String?
+  address      String?
+  leadScore    Int      @default(0)   // 0–100 AI-generated score
+  annualRevenue String? // e.g. "$10M–$50M"
+  employeeCount String? // e.g. "100–500"
+  importVolume  String? // e.g. "High"
+  tags         String[] // e.g. ["organic", "bulk-importer"]
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  leads        Lead[]
+  outreaches   Outreach[]
+
+  @@index([country])
+  @@index([industry])
+  @@index([leadScore])
+  @@map("buyers")
+}
+
+// ─── Lead ────────────────────────────────────────────────────────────────────
+
+model Lead {
+  id          String     @id @default(uuid())
+  buyerId     String
+  userId      String
+  productId   String?
+  leadScore   Int        @default(0)
+  status      LeadStatus @default(NEW)
+  notes       String?    @db.Text
+  nextAction  String?
+  nextActionAt DateTime?
+  convertedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  buyer       Buyer   @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+
+  @@index([userId])
+  @@index([buyerId])
+  @@index([status])
+  @@index([leadScore])
+  @@map("leads")
+}
+
+// ─── Outreach ─────────────────────────────────────────────────────────────────
+
+model Outreach {
+  id          String         @id @default(uuid())
+  buyerId     String
+  userId      String
+  subject     String
+  content     String         @db.Text
+  tone        String         @default("professional") // professional | friendly | formal
+  language    String         @default("en")
+  status      OutreachStatus @default(DRAFT)
+  sentAt      DateTime?
+  openedAt    DateTime?
+  repliedAt   DateTime?
+  aiModel     String?        // which AI model generated this
+  promptUsed  String?        @db.Text
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  buyer       Buyer  @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([buyerId])
+  @@index([status])
+  @@map("outreaches")
+}
+
+// ─── Compliance ───────────────────────────────────────────────────────────────
+
+model Compliance {
+  id           String   @id @default(uuid())
+  country      String
+  countryCode  String
+  documentName String
+  description  String   @db.Text
+  category     String   // e.g. "Documentation", "Labeling", "Certification"
+  authority    String?  // issuing body
+  processingTime String? // e.g. "2–4 weeks"
+  estimatedCost String? // e.g. "$500–$1000"
+  referenceUrl String?
+  isRequired   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([country])
+  @@index([countryCode])
+  @@map("compliance_requirements")
+}
+
+// ─── Opportunity ─────────────────────────────────────────────────────────────
+
+model Opportunity {
+  id           String   @id @default(uuid())
+  userId       String
+  productId    String?
+  country      String
+  countryCode  String
+  demandScore  Int      // 0–100
+  growthRate   String   // e.g. "18%"
+  competition  String   // Low | Medium | High
+  marketSize   String?  // e.g. "$2.4B"
+  trend        String?  // e.g. "Growing"
+  insights     String?  @db.Text
+  source       String   @default("ai_analysis") // ai_analysis | manual | import
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product      Product? @relation(fields: [productId], references: [id])
+
+  @@index([userId])
+  @@index([country])
+  @@index([demandScore])
+  @@map("opportunities")
+}
+
+// ─── Notification ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  metadata  Json?            // flexible payload
+  createdAt DateTime         @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// ─── AuditLog ─────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?
+  action     AuditAction
+  entity     String      // e.g. "Lead", "Product"
+  entityId   String?
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  user       User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

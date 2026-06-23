@@ -1,0 +1,426 @@
+"""
+GlobeX AI — Agentic Tool Implementations
+All tools are async, typed, and return structured Pydantic models.
+"""
+from __future__ import annotations
+
+import json
+import re
+import uuid
+from datetime import date
+from typing import Any
+
+from langchain_core.tools import tool
+from langchain_google_genai import ChatGoogleGenerativeAI
+from pydantic import BaseModel, Field
+
+from utils.config import get_settings
+from utils.logger import get_logger
+
+log = get_logger(__name__)
+settings = get_settings()
+
+
+def _get_llm() -> ChatGoogleGenerativeAI:
+    return ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
+        google_api_key=settings.google_api_key,
+        temperature=0.1,
+    )
+
+
+# ── Pydantic Schemas ─────────────────────────────────────────────────────────
+
+class HSCodeResult(BaseModel):
+    hs_code: str
+    description: str
+    chapter: str
+    heading: str
+    unit: str
+    export_policy: str
+    notes: str
+
+
+class DutyResult(BaseModel):
+    product: str
+    country: str
+    product_value_usd: float
+    hs_code: str
+    basic_customs_duty_pct: float
+    igst_pct: float
+    social_welfare_surcharge_pct: float
+    other_levies_pct: float
+    total_duty_pct: float
+    estimated_duty_usd: float
+    landed_cost_usd: float
+    notes: str
+
+
+class CountryRulesResult(BaseModel):
+    country: str
+    trade_agreements: list[str]
+    import_duty_regime: str
+    key_requirements: list[str]
+    prohibited_items: list[str]
+    required_certifications: list[str]
+    currency: str
+    key_ports: list[str]
+    notes: str
+
+
+class CommercialInvoice(BaseModel):
+    invoice_number: str
+    invoice_date: str
+    seller: dict[str, Any]
+    buyer: dict[str, Any]
+    line_items: list[dict[str, Any]]
+    subtotal_usd: float
+    freight_usd: float
+    insurance_usd: float
+    total_usd: float
+    incoterm: str
+    payment_terms: str
+    country_of_origin: str
+    hs_code: str
+    declaration: str
+
+
+class PackingListResult(BaseModel):
+    packing_list_number: str
+    date: str
+    shipper: str
+    consignee: str
+    packages: list[dict[str, Any]]
+    total_packages: int
+    total_gross_weight_kg: float
+    total_net_weight_kg: float
+    total_volume_cbm: float
+    marks_and_numbers: str
+
+
+# ── Tool 1: HS Code Lookup ───────────────────────────────────────────────────
+
+@tool
+async def hs_code_lookup(product_name: str) -> dict:
+    """
+    Look up the HS Code (Harmonized System Code) for a product.
+
+    Args:
+        product_name: Name or description of the product.
+
+    Returns:
+        Dictionary with HS code, description, chapter, heading, and trade notes.
+    """
+    log.info("HS code lookup", product=product_name)
+    llm = _get_llm()
+
+    prompt = f"""You are an expert in the Harmonized System (HS) / ITC-HS classification used in India.
+Provide the most accurate HS code for the following product.
+
+Product: {product_name}
+
+Respond ONLY with a valid JSON object (no markdown backticks, no explanation):
+{{
+  "hs_code": "<8-digit ITC-HS code e.g. 61051000>",
+  "description": "<official description of the HS heading>",
+  "chapter": "<2-digit chapter number and title>",
+  "heading": "<4-digit heading and description>",
+  "unit": "<unit of measurement e.g. KGS, NOS, MTR>",
+  "export_policy": "<Free / Restricted / Prohibited / STE / Canalized>",
+  "notes": "<any important notes on classification, common errors, or related codes>"
+}}"""
+
+    response = await llm.ainvoke(prompt)
+    raw = response.content.strip()
+    raw = re.sub(r"```(?:json)?|```", "", raw).strip()
+
+    result = json.loads(raw)
+    log.info("HS code found", hs_code=result.get("hs_code"))
+    return result
+
+
+# ── Tool 2: Duty Calculator ──────────────────────────────────────────────────
+
+@tool
+async def duty_calculator(
+    product: str,
+    destination_country: str,
+    product_value_usd: float,
+    hs_code: str = "",
+) -> dict:
+    """
+    Estimate import duty and taxes for a product shipped to a country.
+
+    Args:
+        product: Product name / description.
+        destination_country: Country where goods will be imported.
+        product_value_usd: FOB value of the product in USD.
+        hs_code: HS code if known (optional).
+
+    Returns:
+        Dictionary with duty rates, estimated duty amount, and landed cost.
+    """
+    log.info("Duty calculation", product=product, country=destination_country, value=product_value_usd)
+    llm = _get_llm()
+
+    prompt = f"""You are a customs duty expert with knowledge of global tariff schedules.
+Calculate the import duty and taxes for importing the following product.
+
+Product: {product}
+Destination Country: {destination_country}
+FOB Value (USD): {product_value_usd}
+HS Code (if known): {hs_code or "To be determined"}
+
+Consider:
+- Basic Customs Duty / MFN tariff rate for the destination country
+- Any applicable GST/VAT/sales tax on import
+- Any other levies (anti-dumping, countervailing, social welfare surcharge)
+- Any applicable Free Trade Agreement preferential rate (e.g., India-UAE CEPA, ASEAN FTA)
+
+Respond ONLY with a valid JSON object (no markdown):
+{{
+  "product": "{product}",
+  "country": "{destination_country}",
+  "product_value_usd": {product_value_usd},
+  "hs_code": "<HS code used for calculation>",
+  "basic_customs_duty_pct": <percentage as number e.g. 10.0>,
+  "igst_pct": <percentage or equivalent VAT/GST e.g. 18.0>,
+  "social_welfare_surcharge_pct": <percentage e.g. 1.0>,
+  "other_levies_pct": <percentage of any additional duties>,
+  "total_duty_pct": <total effective duty rate>,
+  "estimated_duty_usd": <calculated duty in USD>,
+  "landed_cost_usd": <product value + total duty>,
+  "notes": "<FTA applicability, important caveats, data source>"
+}}"""
+
+    response = await llm.ainvoke(prompt)
+    raw = response.content.strip()
+    raw = re.sub(r"```(?:json)?|```", "", raw).strip()
+
+    result = json.loads(raw)
+    log.info("Duty calculated", total_duty_pct=result.get("total_duty_pct"))
+    return result
+
+
+# ── Tool 3: Country Rules ────────────────────────────────────────────────────
+
+@tool
+async def country_rules(country: str, product_category: str = "") -> dict:
+    """
+    Retrieve trade rules, requirements, and market access information for a country.
+
+    Args:
+        country: Name of the country (export destination or import source).
+        product_category: Optional product category for specific rules.
+
+    Returns:
+        Dictionary with trade agreements, requirements, certifications, and key notes.
+    """
+    log.info("Country rules lookup", country=country)
+    llm = _get_llm()
+
+    prompt = f"""You are an international trade expert with up-to-date knowledge of global trade rules.
+Provide comprehensive trade rules and market access information for:
+
+Country: {country}
+Product Category (if applicable): {product_category or "General"}
+Context: Indian exporter seeking to export to this country.
+
+Respond ONLY with a valid JSON object (no markdown):
+{{
+  "country": "{country}",
+  "trade_agreements": ["<list of relevant FTAs India has with this country or bloc>"],
+  "import_duty_regime": "<description of the duty structure>",
+  "key_requirements": [
+    "<requirement 1 e.g. CE marking, FDA registration>",
+    "<requirement 2>"
+  ],
+  "prohibited_items": ["<items prohibited for import>"],
+  "required_certifications": ["<certifications required e.g. CE, ISO, HACCP>"],
+  "currency": "<local currency>",
+  "key_ports": ["<main ports of entry>"],
+  "notes": "<any important trade relationship notes, sanctions, or recent changes>"
+}}"""
+
+    response = await llm.ainvoke(prompt)
+    raw = response.content.strip()
+    raw = re.sub(r"```(?:json)?|```", "", raw).strip()
+
+    result = json.loads(raw)
+    log.info("Country rules retrieved", country=country)
+    return result
+
+
+# ── Tool 4: Commercial Invoice Generator ────────────────────────────────────
+
+@tool
+async def invoice_generator(
+    seller_name: str,
+    seller_address: str,
+    buyer_name: str,
+    buyer_address: str,
+    product_description: str,
+    quantity: float,
+    unit: str,
+    unit_price_usd: float,
+    incoterm: str = "FOB",
+    payment_terms: str = "T/T 30 days",
+    country_of_origin: str = "India",
+    hs_code: str = "",
+    freight_usd: float = 0.0,
+    insurance_usd: float = 0.0,
+) -> dict:
+    """
+    Generate a structured commercial invoice for an export shipment.
+
+    Args:
+        seller_name: Exporter's company name.
+        seller_address: Exporter's full address.
+        buyer_name: Importer's company name.
+        buyer_address: Importer's full address.
+        product_description: Description of the product.
+        quantity: Quantity of goods.
+        unit: Unit of measurement (e.g., KGS, PCS, MTR).
+        unit_price_usd: Price per unit in USD.
+        incoterm: Incoterm (default: FOB).
+        payment_terms: Payment terms (default: T/T 30 days).
+        country_of_origin: Country where goods are manufactured.
+        hs_code: HS Code for the product.
+        freight_usd: Freight cost in USD.
+        insurance_usd: Insurance cost in USD.
+
+    Returns:
+        Structured commercial invoice as a dictionary.
+    """
+    log.info("Generating invoice", buyer=buyer_name, product=product_description)
+
+    invoice_number = f"GX-INV-{date.today().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
+    total_value = round(quantity * unit_price_usd, 2)
+    grand_total = round(total_value + freight_usd + insurance_usd, 2)
+
+    invoice: dict[str, Any] = {
+        "invoice_number": invoice_number,
+        "invoice_date": date.today().isoformat(),
+        "seller": {
+            "name": seller_name,
+            "address": seller_address,
+            "country": country_of_origin,
+        },
+        "buyer": {
+            "name": buyer_name,
+            "address": buyer_address,
+        },
+        "line_items": [
+            {
+                "sr_no": 1,
+                "description": product_description,
+                "hs_code": hs_code,
+                "quantity": quantity,
+                "unit": unit,
+                "unit_price_usd": unit_price_usd,
+                "total_usd": total_value,
+            }
+        ],
+        "subtotal_usd": total_value,
+        "freight_usd": freight_usd,
+        "insurance_usd": insurance_usd,
+        "total_usd": grand_total,
+        "currency": "USD",
+        "incoterm": incoterm,
+        "payment_terms": payment_terms,
+        "country_of_origin": country_of_origin,
+        "hs_code": hs_code,
+        "declaration": (
+            "We hereby certify that the information on this invoice is true and correct "
+            "and that the contents of this consignment are as stated above."
+        ),
+    }
+
+    log.info("Invoice generated", invoice_number=invoice_number, total_usd=grand_total)
+    return invoice
+
+
+# ── Tool 5: Packing List Generator ──────────────────────────────────────────
+
+@tool
+async def packing_list_generator(
+    shipper_name: str,
+    consignee_name: str,
+    product_description: str,
+    number_of_packages: int,
+    package_type: str,
+    gross_weight_per_package_kg: float,
+    net_weight_per_package_kg: float,
+    dimensions_cm: str,
+    marks_and_numbers: str = "As per Commercial Invoice",
+) -> dict:
+    """
+    Generate a structured packing list for an export shipment.
+
+    Args:
+        shipper_name: Exporter's name.
+        consignee_name: Importer's name.
+        product_description: Product being shipped.
+        number_of_packages: Total number of packages/cartons/pallets.
+        package_type: Type of packaging (e.g., Cartons, Pallets, Drums).
+        gross_weight_per_package_kg: Gross weight of each package in KG.
+        net_weight_per_package_kg: Net weight of each package in KG.
+        dimensions_cm: Dimensions of each package in cm (e.g., "60x40x50").
+        marks_and_numbers: Shipping marks on packages.
+
+    Returns:
+        Structured packing list as a dictionary.
+    """
+    log.info("Generating packing list", consignee=consignee_name, packages=number_of_packages)
+
+    pl_number = f"GX-PL-{date.today().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
+
+    dims = dimensions_cm.lower().replace(" ", "").split("x")
+    try:
+        l, w, h = float(dims[0]), float(dims[1]), float(dims[2])
+        volume_cbm_per_pkg = round((l * w * h) / 1_000_000, 4)
+    except (ValueError, IndexError):
+        volume_cbm_per_pkg = 0.0
+
+    packages = []
+    for i in range(1, number_of_packages + 1):
+        packages.append(
+            {
+                "package_no": i,
+                "description": product_description,
+                "type": package_type,
+                "gross_weight_kg": gross_weight_per_package_kg,
+                "net_weight_kg": net_weight_per_package_kg,
+                "dimensions_cm": dimensions_cm,
+                "volume_cbm": volume_cbm_per_pkg,
+            }
+        )
+
+    packing_list: dict[str, Any] = {
+        "packing_list_number": pl_number,
+        "date": date.today().isoformat(),
+        "shipper": shipper_name,
+        "consignee": consignee_name,
+        "packages": packages,
+        "total_packages": number_of_packages,
+        "total_gross_weight_kg": round(gross_weight_per_package_kg * number_of_packages, 2),
+        "total_net_weight_kg": round(net_weight_per_package_kg * number_of_packages, 2),
+        "total_volume_cbm": round(volume_cbm_per_pkg * number_of_packages, 4),
+        "marks_and_numbers": marks_and_numbers,
+    }
+
+    log.info("Packing list generated", pl_number=pl_number)
+    return packing_list
+
+
+# ── Tool Registry ────────────────────────────────────────────────────────────
+
+ALL_TOOLS = [
+    hs_code_lookup,
+    duty_calculator,
+    country_rules,
+    invoice_generator,
+    packing_list_generator,
+]
+
+TOOL_MAP = {t.name: t for t in ALL_TOOLS}
