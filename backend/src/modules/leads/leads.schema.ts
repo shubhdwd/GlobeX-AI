@@ -1,0 +1,21 @@
+import { z } from 'zod';
+import { LeadStatus } from '../../types/prisma';
+
+export const createLeadSchema = z.object({
+  buyerId: z.string().uuid(),
+  productId: z.string().uuid().optional(),
+  notes: z.string().max(2000).optional(),
+  nextAction: z.string().max(500).optional(),
+  nextActionAt: z.string().datetime().optional(),
+});
+
+export const updateLeadSchema = z.object({
+  status: z.nativeEnum(LeadStatus).optional(),
+  leadScore: z.number().min(0).max(100).optional(),
+  notes: z.string().max(2000).optional(),
+  nextAction: z.string().max(500).optional(),
+  nextActionAt: z.string().datetime().optional(),
+}).refine((d) => Object.keys(d).length > 0, { message: 'At least one field required' });
+
+export type CreateLeadDto = z.infer<typeof createLeadSchema>;
+export type UpdateLeadDto = z.infer<typeof updateLeadSchema>;
