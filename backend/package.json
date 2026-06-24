@@ -4,7 +4,7 @@
   "description": "GlobeX AI — AI-powered Export Growth Platform for Indian Businesses",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "nodemon --exec tsx src/server.ts --ext ts,json --ignore node_modules --ignore dist",
     "build": "tsc",
     "start": "node dist/server.js",
     "index-docs": "tsx src/ai/indexDocuments.ts",
@@ -47,6 +47,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.6",
     "@types/uuid": "^9.0.8",
+    "nodemon": "^3.1.14",
     "prisma": "^5.10.0",
     "tsx": "^4.7.1",
     "typescript": "^5.4.2"

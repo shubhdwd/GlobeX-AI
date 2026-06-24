@@ -1,70 +1,81 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Globe2, TrendingUp, Users, ShieldCheck } from 'lucide-react';
+import { useFadeIn } from '../../lib/useFadeIn';
+import { BarChart3, TrendingUp, Users, Radar, LineChart, Building2, FileText, ShieldCheck } from 'lucide-react';
 
 const features = [
-  { icon: Globe2, title: 'Global Discovery', desc: 'Find active buyers in 150+ countries instantly with real-time customs data.' },
-  { icon: TrendingUp, title: 'Demand Forecasting', desc: 'Predict which markets will grow for your products using AI predictive models.' },
-  { icon: Users, title: 'Buyer Intelligence', desc: 'Detailed contact profiles, trade histories, and reliability scores of importers.' },
-  { icon: ShieldCheck, title: 'Compliance Guide', desc: 'Navigate complex international export regulations and tariffs easily.' }
+  {
+    icon: BarChart3,
+    title: 'Market Opportunity Analysis',
+    desc: 'Analyze trade flows across 203 countries to find high-growth export destinations for your specific products and HS codes.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Country Demand Forecasting',
+    desc: 'Predict which markets will see increasing import demand using historical customs data and AI-powered trend models.',
+  },
+  {
+    icon: Users,
+    title: 'Importer Lead Discovery',
+    desc: 'Access verified profiles of international importers with trade histories, shipment volumes, and direct contact details.',
+  },
+  {
+    icon: Radar,
+    title: 'Competitor Export Tracking',
+    desc: 'Track competitor export patterns, destination markets, and shipment volumes to identify strategic gaps and opportunities.',
+  },
+  {
+    icon: LineChart,
+    title: 'Product-Market Matching',
+    desc: 'Match your products with the most compatible markets based on HS codes, tariff data, demand signals, and competition levels.',
+  },
+  {
+    icon: Building2,
+    title: 'Buyer Company Profiles',
+    desc: 'Detailed company profiles including annual import volumes, product categories, shipping patterns, and reliability scores.',
+  },
+  {
+    icon: FileText,
+    title: 'AI Research Reports',
+    desc: 'Generate comprehensive market entry reports with country rankings, risk assessments, and actionable trade recommendations.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Compliance & Duty Intelligence',
+    desc: 'Navigate international export regulations, tariff rates, HS classifications, and duty optimization for your shipments.',
+  },
 ];
 
 export default function FeaturesMatrix() {
-  return (
-    <section id="features" className="w-full py-24 px-6 md:px-12 bg-[#040d1a]/75">
-      <div className="max-w-6xl mx-auto z-10">
-        
-        <div className="text-center mb-16">
-          <motion.span
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="type-label text-[#00d4ff] bg-[#00d4ff]/10 px-3 py-1 rounded-full mb-4 inline-block"
-          >
-            OUR PLATFORM
-          </motion.span>
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            viewport={{ once: true }}
-            className="type-h2 text-white mb-4"
-          >
-            AI-Powered Export Intelligence
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            viewport={{ once: true }}
-            className="type-sub text-slate-400 max-w-2xl mx-auto"
-          >
-            Everything you need to find buyers, analyze competitors, and scale your export business globally.
-          </motion.p>
-        </div>
+  const fade = useFadeIn();
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {features.map((feat, idx) => (
-            <motion.div 
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              viewport={{ once: true, margin: "-50px" }}
-              className="card p-8 flex items-start gap-6 hover:-translate-y-1 transition-all duration-300 group hover:shadow-[0_0_30px_rgba(0,212,255,0.15)]"
-            >
-              <div className="bg-slate-800/50 p-4 rounded-2xl text-[#00d4ff] border border-slate-700/50 group-hover:bg-[#00d4ff]/10 group-hover:border-[#00d4ff]/30 transition-colors">
-                <feat.icon size={32} />
+  return (
+    <section id="features" className="w-full bg-[#F5F7FA] py-14 md:py-16 border-b border-[#E5E7EB]">
+      <div className="section-container" ref={fade.ref}>
+        <div className={fade.className}>
+          <div className="text-center mb-10">
+            <span className="type-label text-[#2563EB] mb-2 block">Platform Features</span>
+            <h2 className="type-h2 mb-3">Everything You Need to Scale Exports</h2>
+            <p className="text-[14px] text-[#64748B] max-w-2xl mx-auto">
+              A complete suite of export intelligence tools for Indian manufacturers, traders, and MSME exporters.
+            </p>
+          </div>
+
+          {/* Volza-style 2-column feature grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {features.map((feat, idx) => (
+              <div key={idx} className="feature-card">
+                <div className="icon-wrap">
+                  <feat.icon size={18} />
+                </div>
+                <div>
+                  <div className="card-title">{feat.title}</div>
+                  <div className="card-desc">{feat.desc}</div>
+                </div>
               </div>
-              <div>
-                <h3 className="type-h3 text-white mb-2 group-hover:text-[#00d4ff] transition-colors">{feat.title}</h3>
-                <p className="type-body text-slate-400">{feat.desc}</p>
-              </div>
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>
   );
 }
-
