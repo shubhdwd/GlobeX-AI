@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Menu, X, Phone, Mail } from 'lucide-react';
 
-export default function Navbar({ onOpenAuth }) {
+export default function Navbar({ onOpenAuth, currentPage, onNavigate }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -12,12 +12,31 @@ export default function Navbar({ onOpenAuth }) {
   }, []);
 
   const navLinks = [
-    { name: 'Solutions', href: '#solutions' },
-    { name: 'Features', href: '#features' },
-    { name: 'How It Works', href: '#how-it-works' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'Contact', href: '#contact' },
+    { name: 'AI Agents', href: '#', action: () => onNavigate('agents'), type: 'action', isActive: currentPage === 'agents' },
+    { name: 'Solutions', href: '#solutions', type: 'anchor', isActive: currentPage === 'landing' && window.location.hash === '#solutions' },
+    { name: 'Features', href: '#features', type: 'anchor', isActive: currentPage === 'landing' && window.location.hash === '#features' },
+    { name: 'How It Works', href: '#how-it-works', type: 'anchor', isActive: currentPage === 'landing' && window.location.hash === '#how-it-works' },
+    { name: 'Pricing', href: '#pricing', type: 'anchor', isActive: currentPage === 'landing' && window.location.hash === '#pricing' },
   ];
+
+  const handleLinkClick = (e, link) => {
+    if (link.type === 'action') {
+      e.preventDefault();
+      link.action();
+    } else if (currentPage !== 'landing') {
+      // If we are not on landing page, redirect to landing first
+      e.preventDefault();
+      onNavigate('landing');
+      // Delay slightly to let the page mount before scrolling
+      setTimeout(() => {
+        const element = document.querySelector(link.href);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -39,7 +58,11 @@ export default function Navbar({ onOpenAuth }) {
       <nav className={`sticky top-0 w-full z-50 transition-shadow duration-200 bg-white border-b border-[#E5E7EB] ${isScrolled ? 'shadow-sm' : ''}`}>
         <div className="section-container flex items-center justify-between h-14">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2">
+          <a 
+            href="#" 
+            onClick={(e) => { e.preventDefault(); onNavigate('landing'); }}
+            className="flex items-center gap-2"
+          >
             <div className="w-7 h-7 rounded bg-[#2563EB] flex items-center justify-center">
               <BarChart3 size={15} color="#FFFFFF" strokeWidth={2.5} />
             </div>
@@ -52,7 +75,12 @@ export default function Navbar({ onOpenAuth }) {
               <a
                 key={link.name}
                 href={link.href}
-                className="text-[13px] font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
+                onClick={(e) => handleLinkClick(e, link)}
+                className={`text-[13px] font-medium transition-colors ${
+                  link.isActive 
+                    ? 'text-[#2563EB]' 
+                    : 'text-[#64748B] hover:text-[#0F172A]'
+                }`}
               >
                 {link.name}
               </a>
@@ -86,7 +114,7 @@ export default function Navbar({ onOpenAuth }) {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[60] bg-white flex flex-col">
           <div className="flex justify-between items-center p-4 border-b border-[#E5E7EB]">
-            <a href="#" className="flex items-center gap-2">
+            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('landing'); setMobileMenuOpen(false); }} className="flex items-center gap-2">
               <div className="w-7 h-7 rounded bg-[#2563EB] flex items-center justify-center">
                 <BarChart3 size={15} color="#FFFFFF" strokeWidth={2.5} />
               </div>
@@ -98,8 +126,14 @@ export default function Navbar({ onOpenAuth }) {
           </div>
           <div className="flex flex-col p-5 gap-0.5 flex-1">
             {navLinks.map((link) => (
-              <a key={link.name} href={link.href} onClick={() => setMobileMenuOpen(false)}
-                className="text-[15px] font-medium text-[#0F172A] py-3 border-b border-[#F1F5F9]">
+              <a 
+                key={link.name} 
+                href={link.href} 
+                onClick={(e) => handleLinkClick(e, link)}
+                className={`text-[15px] font-medium py-3 border-b border-[#F1F5F9] ${
+                  link.isActive ? 'text-[#2563EB]' : 'text-[#0F172A]'
+                }`}
+              >
                 {link.name}
               </a>
             ))}

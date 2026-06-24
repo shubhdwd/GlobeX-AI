@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart3 } from 'lucide-react';
 
-export default function Footer() {
+export default function Footer({ onNavigate }) {
   return (
     <footer className="w-full bg-[#0F172A] border-t border-[#1E293B]">
       <div className="section-container py-12">
@@ -9,12 +9,16 @@ export default function Footer() {
 
           {/* Brand — spans 2 cols on lg */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-3">
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); if (onNavigate) onNavigate('landing'); }}
+              className="flex items-center gap-2 mb-3 inline-flex"
+            >
               <div className="w-6 h-6 rounded bg-[#2563EB] flex items-center justify-center">
                 <BarChart3 size={12} color="#FFFFFF" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-bold text-white">GlobeX</span>
-            </div>
+            </a>
             <p className="text-[12px] text-[#94A3B8] leading-relaxed max-w-xs mb-4">
               Export market intelligence platform for Indian manufacturers, traders, and MSME exporters. Discover markets, find verified buyers, and grow your export revenue with data.
             </p>
@@ -29,8 +33,21 @@ export default function Footer() {
           <div>
             <h4 className="text-[11px] font-semibold text-[#CBD5E1] uppercase tracking-wider mb-3">Solutions</h4>
             <ul className="space-y-2">
-              {['Market Analysis', 'Lead Discovery', 'Competitor Intel', 'AI Reports', 'Demand Forecasting'].map(item => (
-                <li key={item}><a href="#solutions" className="text-[12px] text-[#94A3B8] hover:text-white transition-colors">{item}</a></li>
+              {['Market Analysis', 'Lead Discovery', 'Competitor Intel', 'AI Trade Agents', 'Demand Forecasting'].map(item => (
+                <li key={item}>
+                  <a 
+                    href={item === 'AI Trade Agents' ? '#' : '#solutions'} 
+                    onClick={(e) => {
+                      if (item === 'AI Trade Agents' && onNavigate) {
+                        e.preventDefault();
+                        onNavigate('agents');
+                      }
+                    }}
+                    className="text-[12px] text-[#94A3B8] hover:text-white transition-colors"
+                  >
+                    {item}
+                  </a>
+                </li>
               ))}
             </ul>
           </div>

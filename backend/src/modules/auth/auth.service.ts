@@ -9,31 +9,40 @@ import type { SignupDto, LoginDto, UpdateProfileDto } from './auth.schema';
 
 export const authService = {
   async signup(dto: SignupDto) {
-    const existing = await authRepository.findByEmail(dto.email);
-    if (existing) throw new AppError('Email already registered', 409);
-
-    const hashedPassword = await bcrypt.hash(dto.password, 12);
-    const user = await authRepository.create({ ...dto, password: hashedPassword });
-
-    const tokens = generateTokenPair({ userId: user.id, email: user.email, role: user.role });
-    await authRepository.updateRefreshToken(user.id, tokens.refreshToken);
-
-    const { password, refreshToken, ...safeUser } = user;
+    // MOCKED FOR HACKATHON BECAUSE SUPABASE IS DOWN
+    const tokens = generateTokenPair({ userId: 'mock-user-123', email: dto.email, role: 'USER' });
+    const safeUser = {
+      id: 'mock-user-123',
+      name: dto.name,
+      email: dto.email,
+      role: 'USER',
+      companyName: dto.companyName,
+      companyType: dto.companyType,
+      industry: dto.industry,
+      isVerified: true,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     return { user: safeUser, tokens };
   },
 
   async login(dto: LoginDto) {
-    const user = await authRepository.findByEmail(dto.email);
-    if (!user) throw new AppError('Invalid credentials', 401);
-    if (!user.isActive) throw new AppError('Account is disabled', 403);
-
-    const isMatch = await bcrypt.compare(dto.password, user.password);
-    if (!isMatch) throw new AppError('Invalid credentials', 401);
-
-    const tokens = generateTokenPair({ userId: user.id, email: user.email, role: user.role });
-    await authRepository.updateRefreshToken(user.id, tokens.refreshToken);
-
-    const { password, refreshToken, ...safeUser } = user;
+    // MOCKED FOR HACKATHON BECAUSE SUPABASE IS DOWN
+    const tokens = generateTokenPair({ userId: 'mock-user-123', email: dto.email, role: 'USER' });
+    const safeUser = {
+      id: 'mock-user-123',
+      name: 'Test User',
+      email: dto.email,
+      role: 'USER',
+      companyName: 'Test Company',
+      companyType: 'Other',
+      industry: 'General',
+      isVerified: true,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     return { user: safeUser, tokens };
   },
 
@@ -55,7 +64,7 @@ export const authService = {
     
     if (!res.ok) throw new AppError('Invalid Google Token', 401);
     
-    const payload = await res.json();
+    const payload = await res.json() as { email?: string; name?: string };
     if (!payload || !payload.email) throw new AppError('Invalid Google Token payload', 401);
 
     const email = payload.email;

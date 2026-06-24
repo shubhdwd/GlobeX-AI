@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff, ArrowRight, BarChart3 } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, ArrowRight, BarChart3, Loader2 } from 'lucide-react';
 
-function InputField({ id, label, type = 'text', placeholder, icon: Icon, value, onChange, autoComplete }) {
+function InputField({ id, label, type = 'text', placeholder, icon: Icon, value, onChange, autoComplete, error }) {
   const [show, setShow] = useState(false);
   const isPassword = type === 'password';
 
@@ -21,7 +21,7 @@ function InputField({ id, label, type = 'text', placeholder, icon: Icon, value, 
           value={value}
           onChange={onChange}
           autoComplete={autoComplete}
-          className="input-field w-full py-2 text-[13px]"
+          className={`input-field w-full py-2 text-[13px] ${error ? 'border-red-400 focus:border-red-500' : ''}`}
           style={{ paddingLeft: Icon ? '34px' : '12px', paddingRight: isPassword ? '38px' : '12px' }}
         />
         {isPassword && (
@@ -32,6 +32,7 @@ function InputField({ id, label, type = 'text', placeholder, icon: Icon, value, 
           </button>
         )}
       </div>
+      {error && <p className="text-[11px] text-red-500 mt-1">{error}</p>}
     </div>
   );
 }
@@ -44,6 +45,9 @@ export default function AuthModal({ isOpen, onClose }) {
   const [signupConfirm, setSignupConfirm] = useState('');
   const [signinEmail, setSigninEmail] = useState('');
   const [signinPass, setSigninPass] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -56,9 +60,81 @@ export default function AuthModal({ isOpen, onClose }) {
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const handleSubmit = e => {
+  // Reset state when switching tabs
+  const switchTab = (t) => {
+    setTab(t);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
-    console.log(tab === 'signup' ? { signupName, signupEmail, signupPass, signupConfirm } : { signinEmail, signinPass });
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      if (tab === 'signup') {
+        if (signupPass !== signupConfirm) {
+          setError("Passwords don't match.");
+          setLoading(false);
+          return;
+        }
+        if (signupPass.length < 8) {
+          setError("Password must be at least 8 characters.");
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch('http://localhost:3001/api/v1/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: signupName,
+            email: signupEmail,
+            password: signupPass,
+            companyName: 'My Company',
+            companyType: 'Other',
+            industry: 'General'
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem('token', data.tokens?.accessToken || data.tokens?.access?.token || '');
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setSuccess('Account created! Welcome to GlobeX 🎉');
+          setTimeout(() => onClose(), 1500);
+        } else {
+          // Parse Zod validation errors if present
+          const msg = data.errors?.[0]?.message || data.message || 'Signup failed. Please try again.';
+          setError(msg);
+        }
+      } else {
+        const res = await fetch('http://localhost:3001/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: signinEmail,
+            password: signinPass
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem('token', data.tokens?.accessToken || data.tokens?.access?.token || '');
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setSuccess('Welcome back! 👋');
+          setTimeout(() => onClose(), 1200);
+        } else {
+          const msg = data.errors?.[0]?.message || data.message || 'Invalid email or password.';
+          setError(msg);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Cannot connect to server. Make sure the backend is running.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -89,7 +165,7 @@ export default function AuthModal({ isOpen, onClose }) {
         {/* Tab switcher */}
         <div className="flex gap-0.5 bg-[#F5F7FA] rounded p-0.5 mb-4">
           {['signup', 'signin'].map(t => (
-            <button key={t} id={`auth-tab-${t}`} onClick={() => setTab(t)}
+            <button key={t} id={`auth-tab-${t}`} onClick={() => switchTab(t)}
               className={`flex-1 py-1.5 rounded text-[12px] font-semibold transition-all ${
                 tab === t ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#334155]'
               }`}>
@@ -116,6 +192,18 @@ export default function AuthModal({ isOpen, onClose }) {
           <div className="flex-1 h-px bg-[#E5E7EB]" />
         </div>
 
+        {/* Error / Success banners */}
+        {error && (
+          <div className="mb-3 px-3 py-2 rounded bg-red-50 border border-red-200 text-[12px] text-red-600">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-3 px-3 py-2 rounded bg-green-50 border border-green-200 text-[12px] text-green-700 font-medium">
+            {success}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 mt-1">
           {tab === 'signup' ? (
             <>
@@ -134,16 +222,18 @@ export default function AuthModal({ isOpen, onClose }) {
             </>
           )}
 
-          <button id="auth-submit-btn" type="submit"
-            className="btn-primary w-full py-2 text-[13px] flex items-center justify-center gap-1.5 mt-1">
-            {tab === 'signup' ? 'Create Account' : 'Sign In'}
-            <ArrowRight size={13} />
+          <button id="auth-submit-btn" type="submit" disabled={loading}
+            className="btn-primary w-full py-2 text-[13px] flex items-center justify-center gap-1.5 mt-1 disabled:opacity-60 disabled:cursor-not-allowed">
+            {loading
+              ? <><Loader2 size={14} className="animate-spin" /> {tab === 'signup' ? 'Creating...' : 'Signing in...'}</>
+              : <>{tab === 'signup' ? 'Create Account' : 'Sign In'} <ArrowRight size={13} /></>
+            }
           </button>
         </form>
 
         <p className="text-[11px] text-[#64748B] text-center mt-4">
           {tab === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
-          <button onClick={() => setTab(tab === 'signup' ? 'signin' : 'signup')}
+          <button onClick={() => switchTab(tab === 'signup' ? 'signin' : 'signup')}
             className="text-[#2563EB] font-semibold hover:text-[#1D4ED8]"
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', padding: 0 }}>
             {tab === 'signup' ? 'Sign in' : 'Sign up free'}

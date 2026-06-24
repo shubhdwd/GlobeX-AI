@@ -4,7 +4,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './utils/logger';
 
 const startServer = async () => {
-  await connectDatabase();
+  // await connectDatabase(); // MOCKED FOR HACKATHON DUE TO SUPABASE CONNECTION FAILURE
 
   const app = createApp();
 

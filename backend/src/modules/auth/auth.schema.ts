@@ -5,8 +5,7 @@ export const signupSchema = z.object({
   email: z.string().email(),
   password: z
     .string()
-    .min(8)
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain uppercase, lowercase, and number'),
+    .min(8, 'Password must be at least 8 characters'),
   companyName: z.string().min(2).max(200),
   companyType: z.enum(['Manufacturer', 'Trader', 'MSME', 'Exporter', 'Distributor', 'Other']),
   industry: z.string().min(2).max(100),
