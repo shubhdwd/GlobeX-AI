@@ -1,5 +1,4 @@
 import React from 'react';
-import { BarChart3 } from 'lucide-react';
 
 export default function Footer({ onNavigate }) {
   return (
@@ -14,9 +13,7 @@ export default function Footer({ onNavigate }) {
               onClick={(e) => { e.preventDefault(); if (onNavigate) onNavigate('landing'); }}
               className="flex items-center gap-2 mb-3 inline-flex"
             >
-              <div className="w-6 h-6 rounded bg-[#2563EB] flex items-center justify-center">
-                <BarChart3 size={12} color="#FFFFFF" strokeWidth={2.5} />
-              </div>
+              <img src="/globex-logo.jpg" alt="GlobeX Logo" className="w-7 h-7 rounded-lg object-contain bg-white border border-[#334155]" />
               <span className="text-sm font-bold text-white">GlobeX</span>
             </a>
             <p className="text-[12px] text-[#94A3B8] leading-relaxed max-w-xs mb-4">

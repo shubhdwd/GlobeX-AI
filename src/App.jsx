@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Hero from './components/sections/Hero';
 import TrustBar from './components/sections/TrustBar';
@@ -7,10 +8,8 @@ import Solutions from './components/sections/Solutions';
 import FeaturesMatrix from './components/sections/FeaturesMatrix';
 import HowItWorks from './components/sections/HowItWorks';
 import DashboardPreview from './components/sections/DashboardPreview';
-import Testimonials from './components/sections/Testimonials';
 import Pricing from './components/sections/Pricing';
 import FAQ from './components/sections/FAQ';
-import FinalCTA from './components/sections/FinalCTA';
 import Footer from './components/sections/Footer';
 import AuthModal from './components/AuthModal';
 import AiAgentsHub from './components/AiAgentsHub';
@@ -25,6 +24,7 @@ export default function App() {
   }, [currentPage]);
 
   return (
+    <AuthProvider>
     <div className="bg-white min-h-screen">
       <Navbar 
         onOpenAuth={() => setAuthOpen(true)} 
@@ -41,18 +41,21 @@ export default function App() {
           <FeaturesMatrix />
           <HowItWorks />
           <DashboardPreview />
-          <Testimonials />
           <Pricing onOpenAuth={() => setAuthOpen(true)} />
           <FAQ />
-          <FinalCTA onOpenAuth={() => setAuthOpen(true)} />
         </>
       ) : (
         <AiAgentsHub onBackToLanding={() => setCurrentPage('landing')} />
       )}
       
       <Footer onNavigate={setCurrentPage} />
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthModal 
+        isOpen={authOpen} 
+        onClose={() => setAuthOpen(false)}
+        onAuthSuccess={() => { setAuthOpen(false); setCurrentPage('agents'); }}
+      />
     </div>
+    </AuthProvider>
   );
 }
 
