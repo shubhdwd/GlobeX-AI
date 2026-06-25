@@ -39,17 +39,21 @@ function FAQItem({ q, a }) {
     <div className="border-b border-[#E5E7EB]">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-4 text-left group"
+        className="w-full flex items-center justify-between py-4 text-left"
+        style={{ minHeight: '56px' }}
+        aria-expanded={open}
       >
-        <span className="text-[14px] font-medium text-[#0F172A] pr-4 group-hover:text-[#2563EB] transition-colors">{q}</span>
+        <span className="text-[14px] md:text-[15px] font-medium text-[#0F172A] pr-4 leading-snug">
+          {q}
+        </span>
         <ChevronDown
-          size={16}
+          size={18}
           className={`text-[#94A3B8] shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         />
       </button>
       {open && (
-        <div className="pb-4 pr-8">
-          <p className="text-[13px] text-[#64748B] leading-relaxed">{a}</p>
+        <div className="pb-4 pr-6">
+          <p className="text-[13px] md:text-[14px] text-[#64748B] leading-relaxed">{a}</p>
         </div>
       )}
     </div>
@@ -58,14 +62,14 @@ function FAQItem({ q, a }) {
 
 export default function FAQ() {
   return (
-    <section id="faq" className="w-full bg-white py-14 md:py-16 border-b border-[#E5E7EB]">
+    <section id="faq" className="w-full bg-white py-10 md:py-14 border-b border-[#E5E7EB]">
       <div className="section-container">
-        <div className="text-center mb-10">
+        <div className="mb-8 md:text-center">
           <span className="type-label text-[#2563EB] mb-2 block">FAQs</span>
           <h2 className="type-h2 mb-3">Frequently Asked Questions</h2>
         </div>
 
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl md:mx-auto">
           {faqs.map((faq, idx) => (
             <FAQItem key={idx} q={faq.q} a={faq.a} />
           ))}

@@ -49,25 +49,26 @@ export default function FeaturesMatrix() {
   const fade = useFadeIn();
 
   return (
-    <section id="features" className="w-full bg-[#F5F7FA] py-14 md:py-16 border-b border-[#E5E7EB]">
+    <section id="features" className="w-full bg-[#F5F7FA] py-10 md:py-14 border-b border-[#E5E7EB]">
       <div className="section-container" ref={fade.ref}>
         <div className={fade.className}>
-          <div className="text-center mb-10">
+          {/* Section header */}
+          <div className="mb-8 md:text-center">
             <span className="type-label text-[#2563EB] mb-2 block">Platform Features</span>
             <h2 className="type-h2 mb-3">Everything You Need to Scale Exports</h2>
-            <p className="text-[14px] text-[#64748B] max-w-2xl mx-auto">
+            <p className="text-[14px] md:text-[15px] text-[#64748B] md:max-w-2xl md:mx-auto leading-relaxed">
               A complete suite of export intelligence tools for Indian manufacturers, traders, and MSME exporters.
             </p>
           </div>
 
-          {/* Volza-style 2-column feature grid */}
+          {/* Feature cards — single column on mobile, 2-col on md+ */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {features.map((feat, idx) => (
               <div key={idx} className="feature-card">
                 <div className="icon-wrap">
-                  <feat.icon size={18} />
+                  <feat.icon size={20} />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="card-title">{feat.title}</div>
                   <div className="card-desc">{feat.desc}</div>
                 </div>
