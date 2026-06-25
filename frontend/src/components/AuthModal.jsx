@@ -103,7 +103,10 @@ export default function AuthModal({ isOpen, onClose }) {
           localStorage.setItem('token', data.tokens?.accessToken || data.tokens?.access?.token || '');
           localStorage.setItem('user', JSON.stringify(data.user));
           setSuccess('Account created! Welcome to GlobeX 🎉');
-          setTimeout(() => onClose(), 1500);
+          setTimeout(() => {
+            onClose();
+            window.location.reload();
+          }, 1000);
         } else {
           // Parse Zod validation errors if present
           const msg = data.errors?.[0]?.message || data.message || 'Signup failed. Please try again.';
@@ -123,7 +126,10 @@ export default function AuthModal({ isOpen, onClose }) {
           localStorage.setItem('token', data.tokens?.accessToken || data.tokens?.access?.token || '');
           localStorage.setItem('user', JSON.stringify(data.user));
           setSuccess('Welcome back! 👋');
-          setTimeout(() => onClose(), 1200);
+          setTimeout(() => {
+            onClose();
+            window.location.reload();
+          }, 1000);
         } else {
           const msg = data.errors?.[0]?.message || data.message || 'Invalid email or password.';
           setError(msg);

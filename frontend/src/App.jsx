@@ -14,15 +14,48 @@ import FinalCTA from './components/sections/FinalCTA';
 import Footer from './components/sections/Footer';
 import AuthModal from './components/AuthModal';
 import AiAgentsHub from './components/AiAgentsHub';
+import DashboardLayout from './components/dashboard/DashboardLayout';
+import DashboardHome from './components/dashboard/DashboardHome';
+import BuyerDiscovery from './components/dashboard/BuyerDiscovery';
+import MarketIntelligence from './components/dashboard/MarketIntelligence';
+import AICopilot from './components/dashboard/AICopilot';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
+  const [dashboardPage, setDashboardPage] = useState('dashboard');
   const [authOpen, setAuthOpen] = useState(false);
+  
+  // Simple auth state mock for hackathon
+  const isAuthenticated = !!localStorage.getItem('token');
 
   // Scroll to top on page navigation
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [currentPage]);
+  }, [currentPage, dashboardPage]);
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentPage('landing');
+    // Force a re-render by reloading or just state change (state change handles it since isAuthenticated checks token which is now gone, wait, isAuthenticated is derived from localStorage, so we need a state variable for it)
+    window.location.reload();
+  };
+
+  if (isAuthenticated) {
+    return (
+      <DashboardLayout 
+        currentPage={dashboardPage} 
+        onNavigate={setDashboardPage}
+        onLogout={handleLogout}
+      >
+        {dashboardPage === 'dashboard' && <DashboardHome />}
+        {dashboardPage === 'buyers' && <BuyerDiscovery />}
+        {dashboardPage === 'markets' && <MarketIntelligence />}
+        {dashboardPage === 'copilot' && <AICopilot />}
+      </DashboardLayout>
+    );
+  }
 
   return (
     <div className="bg-white min-h-screen">
