@@ -47,7 +47,7 @@ export default function GlobalExpansion() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/market/opportunities', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/market/opportunities', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -81,7 +81,7 @@ export default function GlobalExpansion() {
     try {
       const promptText = `Generate an expansion strategy for Indian ${product} exporters targeting ${targetRegion}.`;
       
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ export default function GlobalExpansion() {
       const targetCountry = opportunities[0]?.country || 'Germany';
       const promptText = `Create a step-by-step export execution plan for Indian ${product} exports to ${targetCountry}.`;
       
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

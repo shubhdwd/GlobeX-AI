@@ -47,7 +47,7 @@ export default function BuyerDiscovery() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL('/api/v1/buyers', window.location.origin);
+      const url = new URL('https://globex-ai-2.onrender.com/api/v1/buyers', window.location.origin);
       if (query) url.searchParams.append('q', query);
       
       const res = await fetch(url, {
@@ -89,7 +89,7 @@ export default function BuyerDiscovery() {
     try {
       const promptText = `Find verified buyers for Indian ${modalProduct} exports to ${modalCountry}.`;
       
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +146,7 @@ export default function BuyerDiscovery() {
     try {
       const promptText = `Write a professional B2B outreach email to ${selectedLead.companyName} located in ${selectedLead.country}. We want to export ${selectedLead.industry} to them. Keep it concise, formal, and persuasive.`;
       
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

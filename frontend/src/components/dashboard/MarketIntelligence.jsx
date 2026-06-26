@@ -31,7 +31,7 @@ export default function MarketIntelligence() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/tradedata/destinations?limit=5', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/tradedata/destinations?limit=5', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -60,7 +60,7 @@ export default function MarketIntelligence() {
     setLoadingCompliance(true);
     setComplianceError(null);
     try {
-      const res = await fetch(`/api/v1/compliance/${country}`, {
+      const res = await fetch(`https://globex-ai-2.onrender.com/api/v1/compliance/${country}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -86,7 +86,7 @@ export default function MarketIntelligence() {
     try {
       const promptText = `Analyze HS Code ${hsCode} market opportunities for ${productName}.`;
       
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

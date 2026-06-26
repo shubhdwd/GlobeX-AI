@@ -43,7 +43,7 @@ export default function DocumentsPage() {
         ? `Generate a commercial invoice for buyer ${buyerName} for ${quantity} units of ${productDesc}.`
         : `Generate a packing list for buyer ${buyerName} for ${quantity} packages of ${productDesc}.`;
 
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -24,7 +24,7 @@ export default function DashboardHome({ onNavigate }) {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const res = await fetch('/api/v1/dashboard', {
+        const res = await fetch('https://globex-ai-2.onrender.com/api/v1/dashboard', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const json = await res.json();

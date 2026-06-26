@@ -25,7 +25,7 @@ export default function AnalyticsDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/dashboard', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/dashboard', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const json = await res.json();
@@ -55,7 +55,7 @@ export default function AnalyticsDashboard() {
 
     try {
       // Prompt LLM to retrieve trade analytics summary
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -64,7 +64,7 @@ export default function ProfileSetup({ onBack }) {
 
     try {
       // We manually construct the request here because we don't have updateProfile in authApi yet
-      const res = await fetch('/api/v1/auth/profile', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/auth/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

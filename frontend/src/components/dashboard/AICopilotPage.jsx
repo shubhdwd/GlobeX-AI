@@ -42,7 +42,7 @@ export default function AICopilotPage() {
 
     try {
       const token = localStorage.getItem('globex_token');
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

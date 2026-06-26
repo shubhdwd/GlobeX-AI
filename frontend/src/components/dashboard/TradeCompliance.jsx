@@ -34,7 +34,7 @@ export default function TradeCompliance() {
     const fetchCountries = async () => {
       setLoadingCountries(true);
       try {
-        const res = await fetch('/api/v1/compliance/countries', {
+        const res = await fetch('https://globex-ai-2.onrender.com/api/v1/compliance/countries', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -63,7 +63,7 @@ export default function TradeCompliance() {
     setLoadingData(true);
     setDataError(null);
     try {
-      const res = await fetch(`/api/v1/compliance/${countryId}`, {
+      const res = await fetch(`https://globex-ai-2.onrender.com/api/v1/compliance/${countryId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -90,7 +90,7 @@ export default function TradeCompliance() {
     try {
       const promptText = `Check export compliance for ${modalProduct} exported from India to ${modalCountry}. Please identify required certifications and document rules.`;
       
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
