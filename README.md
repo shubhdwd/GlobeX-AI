@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/public/logo.png" alt="GlobeX AI Logo" width="120" />
+  <img src="frontend/public/globex-logo.jpg" alt="GlobeX AI Logo" width="120" />
 
   # 🌍 GlobeX AI
 
