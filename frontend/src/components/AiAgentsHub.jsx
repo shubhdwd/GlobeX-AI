@@ -239,7 +239,7 @@ Sourcing-Team`
 
     let logList = agents[activeAgent].simulationLogs;
     try {
-      const res = await fetch(`https://globex-ai-2.onrender.com/api/v1/tradedata/simulation-logs/${activeAgent}`, {
+      const res = await fetch(`/api/v1/tradedata/simulation-logs/${activeAgent}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('globex_token') || ''}`
         }

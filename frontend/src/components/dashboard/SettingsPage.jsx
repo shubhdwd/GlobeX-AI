@@ -20,7 +20,7 @@ export default function SettingsPage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/profile', {
+      const res = await fetch('/api/v1/settings/profile', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('globex_token')}` }
       });
       const data = await res.json();
@@ -30,7 +30,7 @@ export default function SettingsPage() {
 
   const fetchCompany = async () => {
     try {
-      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/company', {
+      const res = await fetch('/api/v1/settings/company', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('globex_token')}` }
       });
       const data = await res.json();
@@ -50,7 +50,7 @@ export default function SettingsPage() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/notifications', {
+      const res = await fetch('/api/v1/settings/notifications', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('globex_token')}` }
       });
       const data = await res.json();
@@ -60,7 +60,7 @@ export default function SettingsPage() {
 
   const fetchApiKeys = async () => {
     try {
-      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/apikeys', {
+      const res = await fetch('/api/v1/settings/apikeys', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('globex_token')}` }
       });
       const data = await res.json();
@@ -91,20 +91,20 @@ export default function SettingsPage() {
       };
 
       if (activeTab === 'profile') {
-        const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/profile', { method: 'PUT', headers, body: JSON.stringify(profile) });
+        const res = await fetch('/api/v1/settings/profile', { method: 'PUT', headers, body: JSON.stringify(profile) });
         if (!res.ok) throw new Error('Failed to update profile');
         await fetchProfile();
       } else if (activeTab === 'company') {
-        const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/company', { method: 'PUT', headers, body: JSON.stringify(company) });
+        const res = await fetch('/api/v1/settings/company', { method: 'PUT', headers, body: JSON.stringify(company) });
         if (!res.ok) throw new Error('Failed to update company details');
         await fetchCompany();
       } else if (activeTab === 'notifications') {
-        const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/notifications', { method: 'PUT', headers, body: JSON.stringify(notifications) });
+        const res = await fetch('/api/v1/settings/notifications', { method: 'PUT', headers, body: JSON.stringify(notifications) });
         if (!res.ok) throw new Error('Failed to update notifications');
         await fetchNotifications();
       } else if (activeTab === 'security') {
         if (security.newPassword !== security.confirmPassword) throw new Error('Passwords do not match');
-        const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/security/password', { method: 'PUT', headers, body: JSON.stringify(security) });
+        const res = await fetch('/api/v1/settings/security/password', { method: 'PUT', headers, body: JSON.stringify(security) });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || 'Failed to update password');
         setSecurity({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -122,7 +122,7 @@ export default function SettingsPage() {
   const handleGenerateApiKey = async () => {
     if (!newKeyName) return;
     try {
-      const res = await fetch('https://globex-ai-2.onrender.com/api/v1/settings/apikeys', {
+      const res = await fetch('/api/v1/settings/apikeys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ export default function SettingsPage() {
   const handleRevokeApiKey = async (id) => {
     if (!window.confirm('Are you sure you want to revoke this API key? It will immediately stop working.')) return;
     try {
-      const res = await fetch(`https://globex-ai-2.onrender.com/api/v1/settings/apikeys/${id}`, {
+      const res = await fetch(`/api/v1/settings/apikeys/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('globex_token')}` }
       });
