@@ -31,7 +31,7 @@ GlobeX AI is an advanced, AI-powered B2B platform built for the **Hackverse 2026
 
 ### Frontend
 - **Framework:** React 19 + Vite
-- **Styling:** Tailwind CSS + Framer Motion
+- **Styling:** Tailwind CSS (Mobile-First Responsive Redesign) + Framer Motion
 - **Visuals:** Three.js, React Globe, Lucide Icons, Recharts
 - **Auth:** `@react-oauth/google`
 
@@ -40,7 +40,7 @@ GlobeX AI is an advanced, AI-powered B2B platform built for the **Hackverse 2026
 - **Database:** PostgreSQL (hosted on Supabase)
 - **ORM:** Prisma
 - **Auth:** bcryptjs, jsonwebtoken, google-auth-library
-- **AI Engine:** Python-based multi-agent system (`ai-agent/`) with RAG, ChromaDB, and custom LLM integrations.
+- **AI Engine:** Powered by **Groq** for lightning-fast inference, orchestrating a multi-agent system (Supervisor, Buyer Discovery, Market Intelligence, Trade Compliance) with RAG and ChromaDB.
 
 ---
 
