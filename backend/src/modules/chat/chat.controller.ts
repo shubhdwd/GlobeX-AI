@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { chatService } from './chat.service';
+import { groqService } from './groq.service';
 import { ChatMessageSchema } from './chat.schema';
 
 export const chatController = {
@@ -9,9 +10,37 @@ export const chatController = {
    */
   async chat(req: Request, res: Response, next: NextFunction) {
     try {
+      const t0 = performance.now();
       const dto = ChatMessageSchema.parse(req.body);
+      const tAuthAndParse = performance.now() - t0;
+      
+      const tExpressStart = performance.now();
+      // Ensure we hit the Python multi-agent architecture (chatService) to profile the agents
       const result = await chatService.chat(dto);
-      res.json({ success: true, data: result });
+      const tAgentCall = performance.now() - tExpressStart;
+
+      // Extract the python profile
+      const pyProfile = (result as any).profile || {};
+      
+      console.log('\n' + '='.repeat(50));
+      console.log('⚡ EMERGENCY PERFORMANCE PROFILE');
+      console.log('='.repeat(50));
+      console.log(`Frontend Request -> Express / Auth: ${tAuthAndParse.toFixed(2)} ms`);
+      console.log(`Express Routing -> Agent Overhead : ${(tAgentCall - ((pyProfile['Intent Detection'] || 0) + (pyProfile['ChromaDB Retrieval'] || 0) + (pyProfile['Tool Calls'] || 0) + (pyProfile['LLM Call (Groq)'] || 0) + (pyProfile['Memory Update'] || 0))*1000).toFixed(2)} ms`);
+      
+      if (Object.keys(pyProfile).length > 0) {
+        console.log(`Intent Detection: ${(pyProfile['Intent Detection'] * 1000).toFixed(2)} ms`);
+        console.log(`ChromaDB Retrieval: ${(pyProfile['ChromaDB Retrieval'] * 1000).toFixed(2)} ms`);
+        console.log(`Tool Calls (Buyer/Market/etc): ${(pyProfile['Tool Calls'] * 1000).toFixed(2)} ms`);
+        console.log(`LLM Call (Groq): ${(pyProfile['LLM Call (Groq)'] * 1000).toFixed(2)} ms`);
+        console.log(`Memory / Formatting: ${(pyProfile['Memory Update'] * 1000).toFixed(2)} ms`);
+      }
+      
+      const totalTime = performance.now() - t0;
+      console.log(`Total: ${(totalTime).toFixed(2)} ms`);
+      console.log('='.repeat(50) + '\n');
+
+      res.json({ success: true, data: result, profile: pyProfile });
     } catch (err) {
       next(err);
     }

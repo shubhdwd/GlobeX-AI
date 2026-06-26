@@ -11,7 +11,7 @@ from typing import Any, AsyncGenerator
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 # pyrefly: ignore [missing-import]
-from langchain_google_genai import ChatGoogleGenerativeAI
+from services.llm_service import get_llm, get_classifier_llm
 
 from memory.memory_manager import MemoryManager
 from prompts.system_prompts import (
@@ -39,7 +39,15 @@ INTENT_CATEGORY_MAP: dict[str, str | None] = {
     "packing_list": None,
     "greeting": None,
     "off_topic": None,
+    # Dataset-backed intents — tool MUST be called before LLM generation
+    "market_research": None,
+    "buyer_discovery": None,
+    "trade_analytics": None,
+    "expansion": None,
 }
+
+# Intents that REQUIRE a dataset tool call — no LLM generation allowed without it
+DATASET_INTENTS = {"market_research", "buyer_discovery", "trade_analytics", "expansion"}
 
 
 class GlobeXAgent:
@@ -55,16 +63,8 @@ class GlobeXAgent:
     """
 
     def __init__(self) -> None:
-        self._llm = ChatGoogleGenerativeAI(
-            model=settings.gemini_model,
-            google_api_key=settings.google_api_key,
-            temperature=0.3,
-        )
-        self._classifier_llm = ChatGoogleGenerativeAI(
-            model=settings.gemini_model,
-            google_api_key=settings.google_api_key,
-            temperature=0.0,
-        )
+        self._llm = get_llm(temperature=0.3)
+        self._classifier_llm = get_classifier_llm(temperature=0.0)
         self._llm_with_tools = self._llm.bind_tools(ALL_TOOLS)
 
     # ── Public Entry Point ───────────────────────────────────────────────────
@@ -88,56 +88,137 @@ class GlobeXAgent:
             }
         """
         log.info("Agent processing message", session_id=session_id, message=user_message[:80])
+        print("STARTING CHAT FOR SESSION:", session_id, flush=True)
 
+        import time
+        start_time = time.time()
+        perf_profile = {}
+        
         # 1. Classify intent
+        t0 = time.perf_counter()
+        print("\n" + "="*50, flush=True)
+        print(f"🕵️ SUPERVISOR AGENT AUDIT LOG | Session: {session_id}", flush=True)
+        print("="*50, flush=True)
+        print("CALLING CLASSIFY INTENT...", flush=True)
         intent_data = await self._classify_intent(user_message)
+        perf_profile["Intent Detection"] = time.perf_counter() - t0
+        print("CLASSIFY INTENT RETURNED!", flush=True)
         intent = intent_data.get("intent", "general_trade_query")
         needs_rag = intent_data.get("needs_rag", True)
         needs_tool = intent_data.get("needs_tool", False)
         tool_name = intent_data.get("tool_name")
         entities = intent_data.get("entities", {})
-        log.info("Intent classified", intent=intent, needs_rag=needs_rag, tool=tool_name)
+        
+        print(f"[1/6] 🧠 Detected Intent  : {intent}", flush=True)
+        print(f"      📦 Detected Product : {entities.get('product', 'None')}", flush=True)
+        print(f"      🌍 Detected Country : {entities.get('country', 'None')}", flush=True)
+        print(f"      🔢 Detected HS Code : {entities.get('hs_code', 'None')}", flush=True)
+        print(f"      🤖 Agent Selected   : {tool_name if needs_tool else 'None (RAG/Direct)'}", flush=True)
 
-        # 2. Retrieve RAG context (skip for greetings / off-topic to save tokens)
+        # Force tool for dataset-backed intents
+        if intent in DATASET_INTENTS and not needs_tool:
+            needs_tool = True
+            tool_name = intent_data.get("tool_name") or intent.replace("expansion", "expansion_analysis")
+
+        log.info(
+            "[PIPELINE] Intent classified",
+            intent=intent,
+            needs_rag=needs_rag,
+            needs_tool=needs_tool,
+            tool=tool_name,
+        )
+
+        # 2. Retrieve RAG context (skip for greetings / off-topic / dataset intents)
+        t0 = time.perf_counter()
+        print(f"[2/6] 📚 ChromaDB / RAG   : {'Required' if needs_rag else 'Skipped'}", flush=True)
         rag_context = ""
-        _skip_rag_intents = {"greeting", "off_topic"}
+        rag_chunks = 0
+        _skip_rag_intents = {"greeting", "off_topic"} | DATASET_INTENTS
         if needs_rag and intent not in _skip_rag_intents:
             category = INTENT_CATEGORY_MAP.get(intent)
             try:
                 rag_context = await rag_pipeline.format_context(user_message, category_filter=category)
+                rag_chunks = rag_context.count("---") + 1 if rag_context else 0
+                print(f"      ✅ Retrieved Documents: {rag_chunks}", flush=True)
+                print(f"      ✅ Chroma Results: SUCCESS", flush=True)
             except Exception as exc:
                 log.warning("RAG retrieval failed", error=str(exc))
+                print(f"      ❌ Chroma Results: FAILED ({exc})", flush=True)
                 rag_context = "Knowledge base temporarily unavailable."
+        elif intent not in _skip_rag_intents and not needs_rag:
+            # For regulatory intents where model decided no RAG, still attempt
+            pass
+
+        log.info("[PIPELINE] RAG retrieval", status="DONE" if rag_context else "SKIPPED", chunks=rag_chunks)
+        perf_profile["ChromaDB Retrieval"] = time.perf_counter() - t0
 
         # 3. Execute tool calls if required
+        t0 = time.perf_counter()
         tool_results: dict[str, Any] = {}
         tools_used: list[str] = []
 
+        print(f"[3/6] 🛠️ Tool Execution  : {'Executing ' + str(tool_name) if needs_tool else 'Skipped'}", flush=True)
         if needs_tool and tool_name and tool_name in TOOL_MAP:
             tool_results, tools_used = await self._execute_tool(
                 tool_name, user_message, entities, memory, session_id
             )
+            
+            # --- BROWSER USE SCRAPER INTEGRATION ---
+            # Enrich missing information with the Web Scraper Agent fallback
+            from tools.scraper_tool import enrich_missing_information
+            tool_results = await enrich_missing_information(tool_name, tool_results, user_message)
+            # ---------------------------------------
+
+            rows = len(tool_results.get(tool_name, {}).get("opportunities", [])
+                    or tool_results.get(tool_name, {}).get("buyers", [])
+                    or tool_results.get(tool_name, {}).get("top_destinations", []))
+            print(f"      ✅ Rows Returned   : {rows} (PostgreSQL)", flush=True)
+            
+            log.info(
+                "[PIPELINE] Dataset search",
+                tool=tool_name,
+                status="SUCCESS" if tool_results else "EMPTY",
+                rows_retrieved=rows,
+            )
+        elif intent in DATASET_INTENTS:
+            log.warning("[PIPELINE] Dataset intent but no tool called", intent=intent, tool_name=tool_name)
+            print(f"      ⚠️ Warning: Dataset intent but tool was skipped!", flush=True)
+            
+        perf_profile["Tool Calls"] = time.perf_counter() - t0
 
         # 4. Fetch session context & conversation history
         session_context = await memory.get_session_context_string(session_id)
         history = await memory.build_langchain_history(session_id)
 
         # 5. Build messages for Gemini
+        # For dataset intents with no results, explicitly forbid hallucination
+        effective_rag = rag_context or "No additional knowledge retrieved."
+        if intent in DATASET_INTENTS and not tool_results:
+            effective_rag = (
+                "CRITICAL: The GlobeX dataset retrieval returned no results. "
+                "You MUST respond with: 'Information not found in the current GlobeX knowledge base.' "
+                "Do NOT use your training knowledge to answer this question."
+            )
+
         system_content = SYSTEM_PROMPT.format(
             session_context=session_context,
-            rag_context=rag_context or "No additional knowledge retrieved.",
+            rag_context=effective_rag,
         )
 
         # Inject tool results into user turn if tools were used
         user_turn = user_message
         if tool_results:
             tool_summary = json.dumps(tool_results, indent=2)
+            context_size = len(tool_summary)
             user_turn = (
                 f"{user_message}\n\n"
-                f"[System: The following tool results have been retrieved to help answer this query:]\n"
+                f"[RETRIEVED DATA from GlobeX Dataset — Use ONLY this data, do not add anything not in it:]\n"
                 f"```json\n{tool_summary}\n```\n"
-                f"Please use these results in your response."
+                f"INSTRUCTION: Base your response EXCLUSIVELY on the retrieved data above."
             )
+            log.info("[PIPELINE] LLM context built", context_size_chars=context_size, rag_chunks=rag_chunks, llm_called=True)
+        else:
+            log.info("[PIPELINE] LLM called without dataset results", rag_chunks=rag_chunks, llm_called=True)
 
         messages = [SystemMessage(content=system_content)]
         for role, content in history[-10:]:  # Last 10 turns
@@ -148,8 +229,11 @@ class GlobeXAgent:
         messages.append(HumanMessage(content=user_turn))
 
         # 6. Generate response
+        t0 = time.perf_counter()
+        print(f"[4/6] 🧠 LLM Called       : YES ({settings.groq_model})", flush=True)
         response_msg = await self._llm.ainvoke(messages)
         response_text = response_msg.content
+        perf_profile["LLM Call (Groq)"] = time.perf_counter() - t0
 
         # 7. Persist messages to memory
         await memory.add_message(session_id, "user", user_message)
@@ -159,7 +243,15 @@ class GlobeXAgent:
         )
 
         # 8. Extract & update session context
+        t0 = time.perf_counter()
+        print(f"[5/6] 💾 Memory Updated   : SUCCESS", flush=True)
         await self._update_memory(session_id, user_message, response_text, entities, memory)
+        perf_profile["Memory Update"] = time.perf_counter() - t0
+
+        exec_time = time.time() - start_time
+        print(f"[6/6] 🏁 Final Status     : COMPLETE", flush=True)
+        print(f"      ⏱️ Execution Time   : {exec_time:.2f}s", flush=True)
+        print("="*50 + "\n", flush=True)
 
         return {
             "response": response_text,
@@ -167,6 +259,7 @@ class GlobeXAgent:
             "tools_used": tools_used,
             "rag_used": bool(rag_context),
             "tool_results": tool_results,
+            "profile": perf_profile,
         }
 
     # ── Streaming variant ────────────────────────────────────────────────────
@@ -178,7 +271,9 @@ class GlobeXAgent:
         memory: MemoryManager,
     ) -> AsyncGenerator[str, None]:
         """Stream the agent response token-by-token."""
+        print("CALLING CLASSIFY INTENT...", flush=True)
         intent_data = await self._classify_intent(user_message)
+        print("CLASSIFY INTENT RETURNED!", flush=True)
         intent = intent_data.get("intent", "general_trade_query")
         needs_rag = intent_data.get("needs_rag", True)
         needs_tool = intent_data.get("needs_tool", False)
@@ -196,6 +291,12 @@ class GlobeXAgent:
         tool_results: dict[str, Any] = {}
         if needs_tool and tool_name and tool_name in TOOL_MAP:
             tool_results, _ = await self._execute_tool(tool_name, user_message, entities, memory, session_id)
+            
+            # --- BROWSER USE SCRAPER INTEGRATION ---
+            # Enrich missing information with the Web Scraper Agent fallback
+            from tools.scraper_tool import enrich_missing_information
+            tool_results = await enrich_missing_information(tool_name, tool_results, user_message)
+            # ---------------------------------------
 
         session_context = await memory.get_session_context_string(session_id)
         history = await memory.build_langchain_history(session_id)
@@ -275,50 +376,29 @@ class GlobeXAgent:
         session_id: str,
     ) -> dict:
         """
-        Use Gemini to extract tool arguments from the user message and session context.
-        Falls back to entity extraction.
+        Directly map extracted entities to tool arguments to avoid redundant LLM calls.
         """
-        session_context = await memory.get_session_context_string(session_id)
-
-        tool_schemas = {
-            "hs_code_lookup": '{"product_name": "<product name>"}',
-            "duty_calculator": '{"product": "<product>", "destination_country": "<country>", "product_value_usd": <number>, "hs_code": "<optional>"}',
-            "country_rules": '{"country": "<country name>", "product_category": "<optional product category>"}',
-            "invoice_generator": (
-                '{"seller_name": "<>", "seller_address": "<>", "buyer_name": "<>", '
-                '"buyer_address": "<>", "product_description": "<>", "quantity": <number>, '
-                '"unit": "<e.g. PCS>", "unit_price_usd": <number>, "incoterm": "<e.g. FOB>", '
-                '"payment_terms": "<>", "country_of_origin": "India", "hs_code": "<>", '
-                '"freight_usd": <number>, "insurance_usd": <number>}'
-            ),
-            "packing_list_generator": (
-                '{"shipper_name": "<>", "consignee_name": "<>", "product_description": "<>", '
-                '"number_of_packages": <integer>, "package_type": "<e.g. Cartons>", '
-                '"gross_weight_per_package_kg": <number>, "net_weight_per_package_kg": <number>, '
-                '"dimensions_cm": "<LxWxH e.g. 60x40x50>", "marks_and_numbers": "<>"}'
-            ),
-        }
-
-        schema = tool_schemas.get(tool_name, "{}")
-        prompt = f"""Extract the arguments for the '{tool_name}' tool from this message.
-
-User Message: {user_message}
-Session Context: {session_context}
-Entities already extracted: {json.dumps(entities)}
-
-Return ONLY a JSON object matching this schema (fill in all fields as best you can):
-{schema}
-
-For any fields not mentioned, use sensible defaults. Do not include markdown."""
-
-        response = await self._classifier_llm.ainvoke(prompt)
-        raw = response.content.strip()
-        raw = re.sub(r"```(?:json)?|```", "", raw).strip()
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            log.warning("Tool arg parse failed — falling back to entities", raw=raw[:200])
-            return entities  # fall back to whatever the intent classifier already extracted
+        product = entities.get("product") or ""
+        country = entities.get("country") or ""
+        company = entities.get("company") or ""
+        
+        if tool_name == "hs_code_lookup":
+            return {"product_name": product}
+        elif tool_name == "duty_calculator":
+            return {"product": product, "destination_country": country, "product_value_usd": 1000}
+        elif tool_name == "country_rules":
+            return {"country": country, "product_category": product}
+        elif tool_name == "market_research":
+            return {"product_category": product, "limit": 10}
+        elif tool_name == "buyer_discovery":
+            return {"country": country, "industry": product, "limit": 10}
+        elif tool_name == "trade_analytics":
+            return {"metric": "overview"}
+        elif tool_name == "expansion_analysis":
+            return {"product": product, "limit": 5}
+            
+        # Fallback for complex tools or unmapped ones (e.g. invoice/packing list)
+        return entities
 
     async def _update_memory(
         self,
@@ -328,39 +408,25 @@ For any fields not mentioned, use sensible defaults. Do not include markdown."""
         entities: dict,
         memory: MemoryManager,
     ) -> None:
-        """Extract entities from the conversation turn and update session context."""
+        """Update session context based on entities already extracted."""
         try:
-            # Use entities from intent classification first
+            # Use entities from intent classification
             company = entities.get("company")
             country = entities.get("country")
             product = entities.get("product")
 
-            # If still missing, run memory extraction
-            if not all([company, country, product]):
-                prompt = MEMORY_EXTRACTION_PROMPT.format(
-                    user_message=user_message, assistant_response=assistant_response[:500]
+            # Update memory only if we have at least one valid entity
+            if company or country or product:
+                await memory.update_session_context(
+                    session_id,
+                    company_name=company,
+                    product_category=product,
+                    destination_country=country,
                 )
-                resp = await self._classifier_llm.ainvoke(prompt)
-                raw = resp.content.strip()
-                raw = re.sub(r"```(?:json)?|```", "", raw).strip()
-                try:
-                    extracted = json.loads(raw)
-                except json.JSONDecodeError:
-                    log.warning("Memory extraction JSON parse failed", raw=raw[:200])
-                    extracted = {}
-                company = company or extracted.get("company_name")
-                country = country or extracted.get("destination_country")
-                product = product or extracted.get("product_category")
-
-            await memory.update_session_context(
-                session_id,
-                company_name=company,
-                product_category=product,
-                destination_country=country,
-            )
         except Exception as exc:
             log.warning("Memory extraction failed", error=str(exc))
 
 
 # ── Singleton ────────────────────────────────────────────────────────────────
 globex_agent = GlobeXAgent()
+

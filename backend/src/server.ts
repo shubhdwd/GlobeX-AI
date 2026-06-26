@@ -4,7 +4,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './utils/logger';
 
 const startServer = async () => {
-  // await connectDatabase(); // MOCKED FOR HACKATHON DUE TO SUPABASE CONNECTION FAILURE
+  await connectDatabase(); // Supabase is now connected (using port 5432)
 
   const app = createApp();
 

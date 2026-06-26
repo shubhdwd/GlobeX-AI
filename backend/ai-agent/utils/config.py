@@ -15,15 +15,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[".env", "../.env", "../../.env"],
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
     )
 
-    # ── Gemini ──────────────────────────────────────────────────────────────
+    # ── LLMs ──────────────────────────────────────────────────────────────
     google_api_key: str = Field(..., alias="GOOGLE_API_KEY")
-    gemini_model: str = Field("gemini-2.5-flash-preview-05-20", alias="GEMINI_MODEL")
+    gemini_model: str = Field("gemini-2.5-flash", alias="GEMINI_MODEL")
+    groq_api_key: str = Field("", alias="GROQ_API_KEY")
+    groq_model: str = Field("llama-3.1-8b-instant", alias="GROQ_MODEL")
 
     # ── ChromaDB ────────────────────────────────────────────────────────────
     chroma_persist_dir: Path = Field(Path("./database/chroma_db"), alias="CHROMA_PERSIST_DIR")

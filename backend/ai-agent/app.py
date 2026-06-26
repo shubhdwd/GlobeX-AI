@@ -4,9 +4,15 @@ Production-ready international trade intelligence agent backend.
 """
 from __future__ import annotations
 
+import sys
 import time
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+
+# Force UTF-8 output on Windows to avoid UnicodeEncodeError from emoji in logs
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,20 +35,20 @@ log = get_logger("globex.app")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown lifecycle hooks."""
-    log.info("🚀 GlobeX AI starting up", env=settings.app_env)
+    log.info("GlobeX AI starting up", env=settings.app_env)
 
     # Ensure DB tables exist
     await init_db()
-    log.info("✅ Database initialised")
+    log.info("Database initialised")
 
     # Boot RAG pipeline (seed ChromaDB if empty)
     await rag_pipeline.initialise()
-    log.info("✅ RAG pipeline ready", documents=rag_pipeline.document_count)
+    log.info("RAG pipeline ready", documents=rag_pipeline.document_count)
 
-    log.info("🌍 GlobeX AI is live", host=settings.app_host, port=settings.app_port)
+    log.info("GlobeX AI is live", host=settings.app_host, port=settings.app_port)
     yield
 
-    log.info("⏹  GlobeX AI shutting down")
+    log.info("GlobeX AI shutting down")
 
 
 # ── Application ───────────────────────────────────────────────────────────────

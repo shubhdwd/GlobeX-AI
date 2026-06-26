@@ -18,8 +18,16 @@ settings = get_settings()
 
 
 # ── Engine & Session Factory ────────────────────────────────────────────────
+db_url = str(settings.database_url)
+if "?pgbouncer=true" in db_url:
+    db_url = db_url.replace("?pgbouncer=true", "")
+    db_url = db_url.replace(":6543", ":5432")
+
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
 engine = create_async_engine(
-    str(settings.database_url),
+    db_url,
     echo=settings.debug,
     future=True,
 )
@@ -40,7 +48,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 # ── Models ──────────────────────────────────────────────────────────────────
 class Base(DeclarativeBase):
-    pass
+    # Allow legacy Column() style annotations (SQLAlchemy 2.0 compatibility)
+    __allow_unmapped__ = True
+
 
 
 class Session(Base):

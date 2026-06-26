@@ -228,7 +228,7 @@ Sourcing-Team`
     }
   };
 
-  const handleStartSimulation = () => {
+  const handleStartSimulation = async () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
@@ -237,7 +237,21 @@ Sourcing-Team`
     setSimulationStep(0);
     setShowOutcome(false);
 
-    const logList = agents[activeAgent].simulationLogs;
+    let logList = agents[activeAgent].simulationLogs;
+    try {
+      const res = await fetch(`/api/v1/tradedata/simulation-logs/${activeAgent}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('globex_token') || ''}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.data?.logs?.length > 0) {
+        logList = data.data.logs;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch simulation logs, using fallback:", err);
+    }
+
     let step = 0;
 
     intervalRef.current = setInterval(() => {
@@ -259,55 +273,19 @@ Sourcing-Team`
   const SelectedIcon = agents[activeAgent].icon;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Premium Header utilizing reference port image professionally */}
-      <div className="relative bg-[#0F172A] py-16 text-white overflow-hidden border-b border-[#1E293B]">
-        <div className="absolute inset-0 z-0 opacity-15">
-          <img 
-            src="/port.jpg" 
-            alt="Global Container Port" 
-            className="w-full h-full object-cover object-center scale-105 filter blur-xs"
-          />
-        </div>
-        
-        {/* Subtle linear overlay for legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/95 via-[#0F172A]/80 to-[#0F172A]/95 z-10" />
-
-        <div className="relative z-20 section-container">
-          <button 
-            onClick={onBackToLanding}
-            className="inline-flex items-center gap-2 text-sm text-[#CBD5E1] hover:text-white transition-colors mb-6 group"
-          >
-            <ArrowLeft size={16} className="transform group-hover:-translate-x-1 transition-transform" />
-            Back to Platform Home
-          </button>
-          
-          <div className="max-w-3xl">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#2563EB]/20 text-[#3B82F6] border border-[#2563EB]/30 mb-4 uppercase tracking-wider">
-              Autonomous Operations Command
-            </span>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-4">
-              AI Trade Agents Hub
-            </h1>
-            <p className="text-base text-[#94A3B8] leading-relaxed">
-              Power your international export pipeline with 5 specialized, autonomous AI agents. Run mock simulations below to see how each agent processes global shipping databases, compliance laws, and email copy templates in seconds.
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className="w-full bg-[#F8FAFC] flex-1">
       {/* Main Interactive Section */}
-      <div className="section-container py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left: Agent Selection Sidebar */}
-          <div className="lg:col-span-4 flex flex-col gap-3">
-            <div className="bg-white rounded-lg border border-[#E2E8F0] p-4">
-              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block mb-3 pl-2">
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <span className="text-[13px] font-bold text-slate-500 uppercase tracking-widest block mb-5">
                 Available Agents
               </span>
               
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {Object.values(agents).map((agent) => {
                   const Icon = agent.icon;
                   const isActive = activeAgent === agent.id;
@@ -315,22 +293,22 @@ Sourcing-Team`
                     <button
                       key={agent.id}
                       onClick={() => setActiveAgent(agent.id)}
-                      className={`flex items-start gap-3 p-3.5 rounded-md text-left transition-all duration-150 group ${
+                      className={`group flex items-center gap-4 p-4 rounded-xl text-left transition-all duration-200 border ${
                         isActive 
-                          ? 'bg-[#EFF6FF] text-[#2563EB] border-l-4 border-[#2563EB] shadow-xs' 
-                          : 'bg-transparent text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
+                          ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                          : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200 hover:shadow-sm'
                       }`}
                     >
-                      <div className={`p-1.5 rounded-md mt-0.5 ${
-                        isActive ? 'bg-[#2563EB]/10 text-[#2563EB]' : 'bg-[#F1F5F9] text-[#64748B] group-hover:bg-white'
+                      <div className={`p-2.5 rounded-lg shrink-0 transition-colors ${
+                        isActive ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-blue-600 group-hover:shadow-sm'
                       }`}>
-                        <Icon size={18} />
+                        <Icon size={20} />
                       </div>
                       <div>
-                        <h3 className={`text-[14px] font-semibold ${isActive ? 'text-[#0F172A]' : 'text-[#334155]'}`}>
+                        <h3 className={`text-[15px] font-semibold mb-0.5 ${isActive ? 'text-blue-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
                           {agent.name}
                         </h3>
-                        <p className="text-[12px] text-[#64748B] line-clamp-1 mt-0.5 font-normal">
+                        <p className={`text-[13px] line-clamp-1 ${isActive ? 'text-blue-700' : 'text-slate-500 group-hover:text-slate-600'}`}>
                           {agent.role}
                         </p>
                       </div>
@@ -341,28 +319,30 @@ Sourcing-Team`
             </div>
 
             {/* Trust and status card */}
-            <div className="bg-white rounded-lg border border-[#E2E8F0] p-5">
-              <h4 className="text-[13px] font-bold text-[#0F172A] mb-3 flex items-center gap-2">
-                <Globe size={15} className="text-[#2563EB]" />
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <h4 className="text-[13px] font-bold text-slate-900 uppercase tracking-widest mb-5 flex items-center gap-2">
+                <Globe size={16} className="text-blue-600" />
                 System Integration Status
               </h4>
-              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9] text-xs">
-                <span className="text-[#64748B]">Custom Manifests</span>
-                <span className="font-semibold text-[#059669] flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#059669]"></span> Operational
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9] text-xs">
-                <span className="text-[#64748B]">Tariff Databases</span>
-                <span className="font-semibold text-[#059669] flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#059669]"></span> Online
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 text-xs">
-                <span className="text-[#64748B]">Language Translators</span>
-                <span className="font-semibold text-[#059669] flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#059669]"></span> 12 Native APIs
-                </span>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <span className="text-[14px] font-medium text-slate-600">Customs Manifests</span>
+                  <span className="text-[13px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Operational
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <span className="text-[14px] font-medium text-slate-600">Tariff Databases</span>
+                  <span className="text-[13px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[14px] font-medium text-slate-600">Language Translators</span>
+                  <span className="text-[13px] font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> 12 Native APIs
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -370,93 +350,92 @@ Sourcing-Team`
           {/* Right: Active Agent Workspace */}
           <div className="lg:col-span-8 flex flex-col gap-6">
             
-            {/* Overview Card */}
-            <div className="bg-white rounded-lg border border-[#E2E8F0] p-6 shadow-xs">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#F1F5F9] pb-5 mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-[#EFF6FF] text-[#2563EB] rounded-lg">
-                    <SelectedIcon size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-[#0F172A]">{agents[activeAgent].name}</h2>
-                    <span className="text-xs font-semibold text-[#059669] bg-[#ECFDF5] px-2.5 py-0.5 rounded-full border border-[#A7F3D0] inline-block mt-1">
-                      Active AI Role: {agents[activeAgent].role}
-                    </span>
-                  </div>
+            {/* Agent Header Card */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-blue-50 text-blue-600 rounded-xl shrink-0">
+                  <SelectedIcon size={28} />
                 </div>
-                
-                <button
-                  onClick={handleStartSimulation}
-                  disabled={isSimulating}
-                  className="btn-primary inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed h-10 shrink-0 self-start md:self-center"
-                >
-                  {isSimulating ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Running Simulation...
-                    </>
-                  ) : (
-                    <>
-                      <Play size={16} fill="currentColor" />
-                      Run Mock Simulation
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-col justify-center">
+                  <h2 className="text-[22px] font-bold text-slate-900 leading-tight mb-1.5">{agents[activeAgent].name}</h2>
+                  <span className="text-[13px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 w-fit">
+                    Active Role: {agents[activeAgent].role}
+                  </span>
+                </div>
               </div>
+              
+              <button
+                onClick={handleStartSimulation}
+                disabled={isSimulating}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[15px] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+              >
+                {isSimulating ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Simulating...
+                  </>
+                ) : (
+                  <>
+                    <Play size={18} fill="currentColor" />
+                    Run Simulation
+                  </>
+                )}
+              </button>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-[13px] font-bold text-[#0F172A] uppercase tracking-wider mb-2">
-                    Description
-                  </h4>
-                  <p className="text-sm text-[#475569] leading-relaxed">
-                    {agents[activeAgent].description}
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="text-[13px] font-bold text-[#0F172A] uppercase tracking-wider mb-2">
-                    Key Agent Capabilities
-                  </h4>
-                  <ul className="flex flex-col gap-2">
-                    {agents[activeAgent].capabilities.map((cap, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-[#475569]">
-                        <Check size={16} className="text-[#059669] mt-0.5 shrink-0" />
-                        <span>{cap}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            {/* Description & Capabilities */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col">
+                <h4 className="text-[13px] font-bold text-slate-900 uppercase tracking-widest mb-4">
+                  Description
+                </h4>
+                <p className="text-[15px] text-slate-600 leading-relaxed flex-1">
+                  {agents[activeAgent].description}
+                </p>
+              </div>
+              
+              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col">
+                <h4 className="text-[13px] font-bold text-slate-900 uppercase tracking-widest mb-4">
+                  Key Capabilities
+                </h4>
+                <ul className="flex flex-col gap-3 flex-1">
+                  {agents[activeAgent].capabilities.map((cap, index) => (
+                    <li key={index} className="flex items-start gap-3 text-[15px] text-slate-600 leading-relaxed">
+                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+                      <span>{cap}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
 
             {/* Interactive Terminal Console */}
-            <div className="bg-[#0F172A] rounded-lg border border-[#1E293B] overflow-hidden flex flex-col shadow-xs">
-              <div className="flex items-center justify-between bg-[#1E293B] px-4 py-2.5 border-b border-[#0F172A]">
-                <div className="flex items-center gap-2">
-                  <Terminal size={14} className="text-[#CBD5E1]" />
-                  <span className="text-xs font-mono font-semibold text-[#CBD5E1]">agent_simulation_terminal.log</span>
+            <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden flex flex-col shadow-lg mt-2">
+              <div className="flex items-center justify-between bg-slate-800/80 px-5 py-3 border-b border-slate-700/50">
+                <div className="flex items-center gap-3">
+                  <Terminal size={16} className="text-slate-400" />
+                  <span className="text-[13px] font-mono font-medium text-slate-300">agent_simulation_terminal.log</span>
                 </div>
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-rose-500/80 border border-rose-500" />
+                  <div className="w-3 h-3 rounded-full bg-amber-500/80 border border-amber-500" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-500/80 border border-emerald-500" />
                 </div>
               </div>
 
-              <div className="p-5 font-mono text-[13px] min-h-[180px] max-h-[260px] overflow-y-auto flex flex-col gap-1.5 bg-[#0F172A] text-slate-300">
+              <div className="p-6 font-mono text-[14px] min-h-[220px] max-h-[320px] overflow-y-auto flex flex-col gap-2 bg-slate-900 text-slate-300">
                 {simulatedLogs.length === 0 ? (
-                  <div className="text-slate-500 italic flex items-center justify-center h-[140px]">
-                    Click "Run Mock Simulation" above to watch the agent think and perform operations.
+                  <div className="text-slate-500 italic flex items-center justify-center h-[160px]">
+                    Click "Run Simulation" above to watch the agent perform operations.
                   </div>
                 ) : (
                   simulatedLogs.map((log, index) => (
                     <div 
                       key={index}
-                      className={`leading-relaxed border-l-2 pl-3 py-0.5 ${
-                        log && log.startsWith('🚀') ? 'text-[#3B82F6] border-[#3B82F6]' :
-                        log && log.startsWith('✅') ? 'text-[#10B981] border-[#10B981]' :
-                        log && log.startsWith('⚠️') ? 'text-[#F59E0B] border-[#F59E0B]' :
+                      className={`leading-relaxed border-l-2 pl-4 py-0.5 ${
+                        log && log.startsWith('🚀') ? 'text-blue-400 border-blue-400' :
+                        log && log.startsWith('✅') ? 'text-emerald-400 border-emerald-400' :
+                        log && log.startsWith('⚠️') ? 'text-amber-400 border-amber-400' :
                         'text-slate-300 border-slate-700'
                       }`}
                     >
@@ -465,8 +444,8 @@ Sourcing-Team`
                   ))
                 )}
                 {isSimulating && (
-                  <div className="flex items-center gap-2 text-slate-400 pl-3.5 mt-1 border-l-2 border-slate-800">
-                    <Loader2 size={12} className="animate-spin" />
+                  <div className="flex items-center gap-3 text-slate-400 pl-4 mt-2 border-l-2 border-slate-800">
+                    <Loader2 size={14} className="animate-spin" />
                     <span>Executing pipeline segment...</span>
                   </div>
                 )}
@@ -476,9 +455,11 @@ Sourcing-Team`
 
             {/* Outcome Display (Triggered after simulation finishes) */}
             {showOutcome && (
-              <div className="bg-white rounded-lg border border-[#E2E8F0] p-6 shadow-xs animate-fade-in">
-                <h3 className="text-base font-bold text-[#0F172A] border-b border-[#F1F5F9] pb-3 mb-4 flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-[#059669]" />
+              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm animate-fade-in flex flex-col gap-6 mt-2">
+                <h3 className="text-[18px] font-bold text-slate-900 border-b border-slate-100 pb-4 flex items-center gap-3">
+                  <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
+                    <CheckCircle2 size={20} />
+                  </div>
                   Simulation Result: {agents[activeAgent].outcome.title}
                 </h3>
 
@@ -486,29 +467,29 @@ Sourcing-Team`
                 
                 {/* 1. TABLE Outcome */}
                 {agents[activeAgent].outcome.type === 'table' && (
-                  <div className="overflow-x-auto rounded-md border border-[#E2E8F0]">
-                    <table className="data-table">
+                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="w-full text-left border-collapse text-[14px]">
                       <thead>
-                        <tr>
-                          <th>Importer Company</th>
-                          <th>Country</th>
-                          <th>Est. Import Volume</th>
-                          <th>Reliability Score</th>
-                          <th>Verified Contact</th>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="font-semibold text-slate-600 p-4">Importer Company</th>
+                          <th className="font-semibold text-slate-600 p-4">Country</th>
+                          <th className="font-semibold text-slate-600 p-4">Est. Import Volume</th>
+                          <th className="font-semibold text-slate-600 p-4">Reliability Score</th>
+                          <th className="font-semibold text-slate-600 p-4">Verified Contact</th>
                         </tr>
                       </thead>
                       <tbody>
                         {agents[activeAgent].outcome.data.map((row, idx) => (
-                          <tr key={idx}>
-                            <td className="font-semibold text-[#0F172A]">{row.company}</td>
-                            <td>{row.country}</td>
-                            <td>{row.volume}</td>
-                            <td>
-                              <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ECFDF5] text-[#047857] border border-[#A7F3D0]">
+                          <tr key={idx} className="border-b border-slate-100 last:border-none hover:bg-slate-50/50 transition-colors">
+                            <td className="p-4 font-semibold text-slate-900">{row.company}</td>
+                            <td className="p-4 text-slate-600">{row.country}</td>
+                            <td className="p-4 text-slate-600">{row.volume}</td>
+                            <td className="p-4">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 {row.reliability}
                               </span>
                             </td>
-                            <td className="text-slate-500 font-mono text-[11px]">{row.contact}</td>
+                            <td className="p-4 text-slate-500 font-mono text-[13px]">{row.contact}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -518,27 +499,27 @@ Sourcing-Team`
 
                 {/* 2. LIST Outcome */}
                 {agents[activeAgent].outcome.type === 'list' && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {agents[activeAgent].outcome.data.map((row, idx) => (
-                      <div key={idx} className="border border-[#E2E8F0] rounded-md p-4 bg-[#F8FAFC]">
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-bold text-[#0F172A]">{row.country}</span>
-                          <span className="text-xs font-bold text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded">
+                      <div key={idx} className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm flex flex-col gap-4 hover:border-slate-300 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <span className="font-bold text-[16px] text-slate-900">{row.country}</span>
+                          <span className="text-[12px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
                             Score: {row.score}
                           </span>
                         </div>
-                        <div className="text-xs text-[#64748B] flex flex-col gap-1 mt-3">
-                          <div className="flex justify-between">
-                            <span>Import Tariff:</span>
-                            <span className="font-medium text-[#334155]">{row.tariff}</span>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-slate-500">Import Tariff:</span>
+                            <span className="font-medium text-slate-900">{row.tariff}</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span>5-Yr CAGR:</span>
-                            <span className="font-medium text-[#334155]">{row.growth}</span>
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-slate-500">5-Yr CAGR:</span>
+                            <span className="font-medium text-slate-900">{row.growth}</span>
                           </div>
-                          <div className="mt-2 text-center text-[10px] font-bold text-[#047857] bg-[#ECFDF5] py-1 rounded border border-[#A7F3D0]">
-                            {row.status}
-                          </div>
+                        </div>
+                        <div className="mt-auto text-center text-[12px] font-bold text-emerald-700 bg-emerald-50 py-2 rounded-lg border border-emerald-200">
+                          {row.status}
                         </div>
                       </div>
                     ))}
@@ -547,14 +528,14 @@ Sourcing-Team`
 
                 {/* 3. EMAIL Outcome */}
                 {agents[activeAgent].outcome.type === 'email' && (
-                  <div className="border border-[#E2E8F0] rounded-md overflow-hidden bg-[#F8FAFC]">
-                    <div className="bg-[#E2E8F0]/40 px-4 py-2.5 border-b border-[#E2E8F0] text-xs font-mono">
-                      <div className="mb-1 text-slate-500">
-                        <span className="font-bold text-slate-700">Subject: </span>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                    <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                      <div className="text-[14px] text-slate-600 font-mono">
+                        <span className="font-semibold text-slate-900">Subject: </span>
                         {agents[activeAgent].outcome.subject}
                       </div>
                     </div>
-                    <div className="p-4 text-xs font-mono whitespace-pre-wrap leading-relaxed text-[#334155] bg-white max-h-[220px] overflow-y-auto">
+                    <div className="p-6 text-[14px] font-mono whitespace-pre-wrap leading-relaxed text-slate-700 max-h-[300px] overflow-y-auto">
                       {agents[activeAgent].outcome.body}
                     </div>
                   </div>
@@ -562,21 +543,21 @@ Sourcing-Team`
 
                 {/* 4. CHECKLIST Outcome */}
                 {agents[activeAgent].outcome.type === 'checklist' && (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-4">
                     {agents[activeAgent].outcome.data.map((row, idx) => (
-                      <div key={idx} className="flex items-start gap-3 border border-[#E2E8F0] rounded-md p-3.5 bg-white">
-                        <div className="p-1 rounded-full bg-[#ECFDF5] text-[#059669] mt-0.5">
-                          <Check size={14} />
+                      <div key={idx} className="flex items-start gap-4 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                        <div className="p-1.5 rounded-full bg-emerald-50 text-emerald-600 mt-0.5 shrink-0 border border-emerald-100">
+                          <Check size={16} />
                         </div>
                         <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <h4 className="text-[13px] font-bold text-[#0F172A]">{row.check}</h4>
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                          <div className="flex justify-between items-start mb-1">
+                            <h4 className="text-[15px] font-bold text-slate-900">{row.check}</h4>
+                            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
                               {row.status}
                             </span>
                           </div>
-                          <p className="text-[11px] text-[#64748B] mt-0.5">Authority: {row.authority}</p>
-                          <div className="mt-2 text-xs font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-1 rounded inline-block">
+                          <p className="text-[13px] text-slate-500 mb-3">Authority: {row.authority}</p>
+                          <div className="text-[13px] font-medium text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 inline-block">
                             Required Action: {row.action}
                           </div>
                         </div>
@@ -587,27 +568,27 @@ Sourcing-Team`
 
                 {/* 5. SCORING Outcome */}
                 {agents[activeAgent].outcome.type === 'scoring' && (
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                    <div className="md:col-span-4 flex flex-col items-center justify-center border border-[#E2E8F0] rounded-md p-5 bg-[#F8FAFC] text-center">
-                      <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">Overall Fit Score</span>
-                      <div className="text-5xl font-black text-[#2563EB] my-2">{agents[activeAgent].outcome.score}</div>
-                      <span className="text-xs font-bold text-[#059669] bg-[#ECFDF5] px-3 py-1 rounded-full border border-[#A7F3D0]">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                    <div className="md:col-span-4 flex flex-col items-center justify-center border border-slate-200 rounded-xl p-8 bg-white shadow-sm text-center">
+                      <span className="text-[13px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Overall Fit Score</span>
+                      <div className="text-6xl font-black text-blue-600 my-4">{agents[activeAgent].outcome.score}</div>
+                      <span className="text-[13px] font-bold text-emerald-700 bg-emerald-50 px-4 py-1.5 rounded-full border border-emerald-200">
                         Tier-1 Match
                       </span>
                     </div>
 
-                    <div className="md:col-span-8 flex flex-col gap-3">
-                      <h4 className="text-[12px] font-bold text-[#0F172A] uppercase tracking-wider pl-1">Capability Breakdown</h4>
-                      <div className="flex flex-col gap-2">
+                    <div className="md:col-span-8 flex flex-col justify-center gap-5 border border-slate-200 rounded-xl p-6 bg-white shadow-sm">
+                      <h4 className="text-[13px] font-bold text-slate-900 uppercase tracking-widest">Capability Breakdown</h4>
+                      <div className="flex flex-col gap-4">
                         {agents[activeAgent].outcome.metrics.map((row, idx) => (
                           <div key={idx}>
-                            <div className="flex justify-between text-xs text-[#334155] mb-1">
+                            <div className="flex justify-between text-[14px] text-slate-700 mb-2">
                               <span className="font-semibold">{row.name}</span>
                               <span className="font-medium text-slate-500">{row.rating} ({row.score}/100)</span>
                             </div>
-                            <div className="w-full bg-[#E2E8F0] h-2 rounded-full overflow-hidden">
+                            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                               <div 
-                                className="bg-[#2563EB] h-full rounded-full transition-all duration-500" 
+                                className="bg-blue-600 h-full rounded-full transition-all duration-700 ease-out" 
                                 style={{ width: `${row.score}%` }} 
                               />
                             </div>

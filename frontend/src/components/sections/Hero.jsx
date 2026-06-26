@@ -1,16 +1,25 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ArrowRight, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, ChevronRight } from 'lucide-react';
 import Globe from '../Globe';
 
 export default function Hero({ onOpenAuth }) {
   const globeContainerRef = useRef(null);
-  const [globeSize, setGlobeSize] = useState(460);
+  const [globeSize, setGlobeSize] = useState(320);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const updateSize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
       if (globeContainerRef.current) {
-        const rect = globeContainerRef.current.getBoundingClientRect();
-        setGlobeSize(Math.min(rect.width, rect.height, 480));
+        const vw = window.innerWidth;
+        if (mobile) {
+          // On mobile: globe fills most of viewport width, capped at 360px
+          setGlobeSize(Math.min(vw - 32, 360));
+        } else {
+          const rect = globeContainerRef.current.getBoundingClientRect();
+          setGlobeSize(Math.min(rect.width, rect.height, 480));
+        }
       }
     };
     updateSize();
@@ -18,60 +27,88 @@ export default function Hero({ onOpenAuth }) {
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  const checks = [
-    'Trade data from 203 countries',
-    '10M+ customs records analyzed',
-    'Verified importer databases',
+  const stats = [
+    { value: '203', label: 'Countries' },
+    { value: '10M+', label: 'Trade Records' },
+    { value: '50K+', label: 'Importers' },
   ];
 
   return (
     <section id="hero" className="w-full bg-[#F5F7FA] border-b border-[#E5E7EB]">
-      <div className="section-container py-12 md:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+      <div className="section-container py-8 md:py-12 lg:py-16">
 
-          {/* Left: Content */}
-          <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-[#EFF6FF] border border-[#DBEAFE] mb-5">
-              <span className="text-[11px] font-semibold text-[#2563EB] uppercase tracking-wider">Export Intelligence Platform</span>
+        {/* Mobile layout: single column, content then globe */}
+        {/* Desktop layout: 2-column side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+
+          {/* Content column */}
+          <div className="flex flex-col">
+            {/* Badge */}
+            <div className="inline-flex items-center self-start gap-1.5 px-2.5 py-1 rounded-full bg-[#EFF6FF] border border-[#DBEAFE] mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
+              <span className="text-[11px] font-bold text-[#2563EB] uppercase tracking-wider">
+                Export Intelligence Platform
+              </span>
             </div>
 
+            {/* Headline — mobile-first size */}
             <h1 className="type-h1 mb-4 leading-tight">
-              Identify High-Potential Export Markets and Qualified Buyers in Minutes
+              Find Your Next Export Market and Qualified Buyers — in Minutes
             </h1>
 
-            <p className="text-[15px] text-[#64748B] mb-6 leading-relaxed max-w-lg">
-              GlobeX uses trade intelligence and AI-powered research to help Indian exporters discover profitable countries, evaluate demand, and find verified importers.
+            {/* Description */}
+            <p className="text-[15px] md:text-[16px] text-[#64748B] mb-6 leading-relaxed max-w-xl">
+              GlobeX uses AI and real customs data to help Indian exporters discover
+              profitable markets, evaluate demand, and connect with verified international importers.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 mb-6">
+            {/* CTAs — full width on mobile, auto on tablet+ */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <button
                 id="hero-cta-btn"
                 onClick={onOpenAuth}
-                className="btn-primary py-2.5 px-5 text-[13px] flex items-center justify-center gap-2"
+                className="btn-primary w-full sm:w-auto px-6 text-[15px] gap-2"
               >
                 Start Market Analysis
-                <ArrowRight size={14} />
+                <ArrowRight size={16} />
               </button>
-              <button className="btn-secondary py-2.5 px-5 text-[13px]">
-                Book a Free Demo
+              <button
+                onClick={onOpenAuth}
+                className="btn-secondary w-full sm:w-auto px-6 text-[15px]"
+              >
+                View Demo
               </button>
             </div>
 
-            <div className="flex flex-col gap-2">
-              {checks.map((text, i) => (
-                <div key={i} className="flex items-center gap-2 text-[13px] text-[#64748B]">
-                  <CheckCircle size={14} className="text-[#059669] shrink-0" />
-                  {text}
+            {/* Trust strip — horizontal on mobile */}
+            <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+              {stats.map((s, i) => (
+                <div key={i} className="flex flex-col">
+                  <span className="text-[18px] font-bold text-[#0F172A] leading-none">{s.value}</span>
+                  <span className="text-[11px] text-[#64748B] mt-0.5">{s.label}</span>
                 </div>
               ))}
+              <div className="h-8 w-px bg-[#E5E7EB] hidden sm:block" />
+              <div className="flex items-center gap-1.5 text-[12px] text-[#64748B]">
+                <CheckCircle size={13} className="text-[#059669] shrink-0" />
+                No credit card required
+              </div>
             </div>
           </div>
 
-          {/* Right: Globe */}
-          <div ref={globeContainerRef} className="hidden lg:flex items-center justify-center h-[440px] relative">
-            <Globe width={globeSize} height={globeSize} />
+          {/* Globe — shown on ALL screen sizes, sized responsively */}
+          <div
+            ref={globeContainerRef}
+            className="flex items-center justify-center w-full"
+            style={{
+              height: isMobile ? `${globeSize}px` : '440px',
+              minHeight: isMobile ? '280px' : '380px',
+            }}
+          >
+            <Globe width={globeSize} height={isMobile ? globeSize : Math.min(globeSize, 460)} />
           </div>
         </div>
+
       </div>
     </section>
   );

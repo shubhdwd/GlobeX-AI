@@ -357,7 +357,7 @@ async def agent_market_research(request: MarketResearchRequest) -> dict:
 
 @router.post("/agents/lead-scoring", summary="Agent Lead Scoring")
 async def agent_lead_scoring(request: LeadScoringAgentRequest) -> dict:
-    """Score a lead based on buyer and product details using Gemini."""
+    """Score a lead based on buyer and product details using Groq."""
     try:
         buyer = request.buyer
         product = request.product
@@ -413,7 +413,7 @@ async def agent_lead_scoring(request: LeadScoringAgentRequest) -> dict:
 
 @router.post("/agents/outreach", summary="Agent Outreach Email Generator")
 async def agent_outreach(request: OutreachAgentRequest) -> dict:
-    """Generate a highly personalized outreach email to a global buyer using Gemini."""
+    """Generate a highly personalized outreach email to a global buyer using Groq."""
     try:
         buyer = request.buyer
         sender = request.sender
@@ -445,7 +445,7 @@ async def agent_outreach(request: OutreachAgentRequest) -> dict:
         {{
           "subject": "<Compelling, high-open-rate subject line>",
           "content": "<Full email body with placeholders like [Phone] or [Email] for contact info>",
-          "model": "{settings.gemini_model}",
+          "model": "{settings.groq_model}",
           "prompt": "<concise description of prompt configuration>"
         }}"""
         

@@ -12,6 +12,7 @@ langchain==0.3.7
 langchain-core==0.3.17
 langchain-community==0.3.7
 langchain-google-genai==2.0.5
+langchain-groq==0.2.1
 langgraph==0.2.39
 
 # Vector Store
@@ -31,7 +32,7 @@ openpyxl==3.1.5
 tiktoken==0.8.0
 
 # Database
-sqlalchemy==2.0.36
+sqlalchemy==2.0.35
 aiosqlite==0.20.0
 
 # PDF Generation

@@ -7,16 +7,25 @@ import {
   Settings, 
   LogOut,
   Bell,
-  Search
+  Search,
+  Briefcase,
+  FileText,
+  BarChart2,
+  ShieldCheck,
+  TerminalSquare
 } from 'lucide-react';
 
 export default function DashboardLayout({ children, currentPage, onNavigate, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-    { id: 'buyers', label: 'Buyer Discovery', icon: Users },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'global-expansion', label: 'Global Expansion', icon: Briefcase },
     { id: 'markets', label: 'Market Intelligence', icon: Globe2 },
+    { id: 'buyers', label: 'Buyer Discovery', icon: Users },
+    { id: 'compliance', label: 'Trade Compliance', icon: ShieldCheck },
+    { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'analytics', label: 'Analytics', icon: BarChart2 },
     { id: 'copilot', label: 'AI Copilot', icon: MessageSquare },
   ];
 
@@ -26,12 +35,10 @@ export default function DashboardLayout({ children, currentPage, onNavigate, onL
     <div className="min-h-screen bg-[#F8FAFC] flex">
       {/* Sidebar */}
       <aside className={`bg-white border-r border-[#E2E8F0] flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[#E2E8F0]">
+        <div className={`h-16 flex items-center px-4 border-b border-[#E2E8F0] ${!sidebarOpen ? 'justify-center' : ''}`}>
           <div className="flex items-center gap-2 overflow-hidden">
-            <div className="w-8 h-8 rounded bg-[#2563EB] flex items-center justify-center shrink-0">
-              <span className="text-white font-bold text-sm">G</span>
-            </div>
-            {sidebarOpen && <span className="font-bold text-[#0F172A] whitespace-nowrap">GlobeX AI</span>}
+            <img src="/globex-logo.jpg" alt="GlobeX AI Logo" className="w-8 h-8 shrink-0 object-contain rounded-lg" style={{ mixBlendMode: 'multiply' }} />
+            {sidebarOpen && <span className="font-bold text-[#0F172A] text-lg whitespace-nowrap tracking-tight">GlobeX AI</span>}
           </div>
         </div>
 
@@ -62,10 +69,23 @@ export default function DashboardLayout({ children, currentPage, onNavigate, onL
 
         <div className="p-4 border-t border-[#E2E8F0]">
           <button 
+            onClick={() => onNavigate('developer-mode')}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors w-full mb-1"
+            title={!sidebarOpen ? 'Developer Mode' : undefined}
+          >
+            <TerminalSquare size={18} className="text-[#94A3B8]" />
+            {sidebarOpen && <span className="text-sm whitespace-nowrap">Developer Mode</span>}
+          </button>
+          <button 
+            onClick={() => onNavigate('settings')}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full mb-1 ${
+              currentPage === 'settings'
+                ? 'bg-[#EFF6FF] text-[#2563EB] font-medium'
+                : 'text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
+            }`}
             title={!sidebarOpen ? 'Settings' : undefined}
           >
-            <Settings size={18} className="text-[#94A3B8]" />
+            <Settings size={18} className={currentPage === 'settings' ? 'text-[#2563EB]' : 'text-[#94A3B8]'} />
             {sidebarOpen && <span className="text-sm whitespace-nowrap">Settings</span>}
           </button>
           <button 
@@ -94,9 +114,9 @@ export default function DashboardLayout({ children, currentPage, onNavigate, onL
                 <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
             </button>
-            <h1 className="text-lg font-bold text-[#0F172A] capitalize">
+            <div role="heading" aria-level="1" className="text-xl font-bold text-[#0F172A] capitalize">
               {menuItems.find(i => i.id === currentPage)?.label || 'Dashboard'}
-            </h1>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">

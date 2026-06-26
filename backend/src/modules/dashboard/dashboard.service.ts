@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { LeadStatus } from '@prisma/client';
+import { tradeDataService } from '../../services/tradeDataService';
 
 export const dashboardService = {
   async getSummary(userId: string) {
@@ -59,6 +60,8 @@ export const dashboardService = {
       where: { userId },
     }).then((r) => r.length);
 
+    const datasetStats = tradeDataService.getDatasetStats();
+
     return {
       overview: {
         buyersFound,
@@ -69,6 +72,7 @@ export const dashboardService = {
         productsRegistered: productsCount,
         outreachSent: outreachCount,
       },
+      datasetStats,
       pipeline: leadsByStatus.map((s) => ({ status: s.status, count: s._count._all })),
       topCountries: topOpportunities.map((o) => ({
         country: o.country,

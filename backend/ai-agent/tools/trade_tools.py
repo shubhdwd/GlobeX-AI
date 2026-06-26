@@ -11,7 +11,7 @@ from datetime import date
 from typing import Any
 
 from langchain_core.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
+from services.llm_service import get_classifier_llm
 from pydantic import BaseModel, Field
 
 from utils.config import get_settings
@@ -21,12 +21,8 @@ log = get_logger(__name__)
 settings = get_settings()
 
 
-def _get_llm() -> ChatGoogleGenerativeAI:
-    return ChatGoogleGenerativeAI(
-        model=settings.gemini_model,
-        google_api_key=settings.google_api_key,
-        temperature=0.1,
-    )
+def _get_llm():
+    return get_classifier_llm(temperature=0.1)
 
 
 # ── Pydantic Schemas ─────────────────────────────────────────────────────────
@@ -413,6 +409,224 @@ async def packing_list_generator(
     return packing_list
 
 
+# ── Tool 6: Market Research (Dataset-Backed) ─────────────────────────────────
+
+INTERNAL_API_URL = "http://localhost:3001/internal/tradedata"
+
+@tool
+async def market_research(product_category: str = "", limit: int = 10) -> dict:
+    """
+    Research top export market opportunities using the GlobeX AI internal trade dataset.
+    Returns real countries, demand scores, CAGR growth rates, and tariff rates
+    computed directly from the 1988-2021 bilateral trade CSV dataset.
+    ALWAYS call this before answering any question about market opportunities,
+    top export destinations, or country recommendations.
+
+    Args:
+        product_category: Optional product category to filter results.
+        limit: Maximum number of markets to return (default 10).
+
+    Returns:
+        Dictionary with dataset-backed market opportunities and metadata.
+    """
+    import httpx
+    log.info("Dataset market research", product_category=product_category, limit=limit)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            opp_resp = await client.get(f"{INTERNAL_API_URL}/opportunities", params={"limit": limit, "product": product_category})
+            stats_resp = await client.get(f"{INTERNAL_API_URL}/stats")
+            opp_resp.raise_for_status()
+            stats_resp.raise_for_status()
+
+        data = opp_resp.json()
+        opportunities = data.get("data", data) if isinstance(data, dict) else data
+        stats = stats_resp.json().get("data", {})
+
+        result = {
+            "source": "GlobeX Internal Trade Dataset (CSV)",
+            "dataset_records": stats.get("tradeFlowRecords", "unknown"),
+            "years_covered": stats.get("yearsRange", "unknown"),
+            "countries_covered": stats.get("countriesCovered", "unknown"),
+            "opportunities": opportunities,
+            "top_country": opportunities[0]["country"] if opportunities else "No data",
+            "instruction": "Use ONLY the data above. Do not add countries not in this list.",
+        }
+        log.info("Market research complete", markets_found=len(opportunities))
+        return result
+
+    except Exception as exc:
+        log.error("Market research dataset call failed", error=str(exc))
+        return {
+            "source": "DATASET_UNAVAILABLE",
+            "error": str(exc),
+            "instruction": "Dataset is currently unavailable. State: 'Market data not found in the current GlobeX knowledge base.'",
+        }
+
+
+@tool
+async def buyer_discovery(country: str = "", industry: str = "", limit: int = 10) -> dict:
+    """
+    Discover potential buyers from GlobeX AI's internal trade partner dataset.
+    Returns actual trade partner countries and their import volumes from India
+    sourced directly from the bilateral trade CSV dataset.
+    ALWAYS call this before answering any question about buyers, importers,
+    or trading companies. NEVER invent buyer names.
+
+    Args:
+        country: Optional country to filter buyers.
+        industry: Optional industry/product category to filter.
+        limit: Maximum number of buyers to return (default 10).
+
+    Returns:
+        Dictionary with dataset-backed buyer/partner information.
+    """
+    import httpx
+    log.info("Dataset buyer discovery", country=country, industry=industry, limit=limit)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{INTERNAL_API_URL}/partners", params={"limit": limit, "country": country, "product": industry})
+            resp.raise_for_status()
+            data = resp.json()
+            partners = data.get("data", data) if isinstance(data, dict) else data
+
+        # Filter by country if specified
+        if country:
+            filtered = [p for p in partners if country.lower() in p.get("country", "").lower()]
+            partners = filtered if filtered else partners  # fall back to all if no match
+
+        if not partners:
+            return {
+                "source": "GlobeX Internal Trade Dataset",
+                "buyers": [],
+                "message": "No matching buyers found in the current GlobeX knowledge base.",
+                "instruction": "State exactly: 'No matching buyers found in the current GlobeX knowledge base.'",
+            }
+
+        result = {
+            "source": "GlobeX Internal Trade Dataset (CSV)",
+            "total_found": len(partners),
+            "buyers": partners,
+            "top_buyer": partners[0]["companyName"] if partners else None,
+            "instruction": "Use ONLY the buyers listed above. Do not add or invent any company names.",
+        }
+        log.info("Buyer discovery complete", buyers_found=len(partners))
+        return result
+
+    except Exception as exc:
+        log.error("Buyer discovery dataset call failed", error=str(exc))
+        return {
+            "source": "DATASET_UNAVAILABLE",
+            "buyers": [],
+            "error": str(exc),
+            "instruction": "Dataset is currently unavailable. State: 'Buyer data not found in the current GlobeX knowledge base.'",
+        }
+
+
+@tool
+async def trade_analytics(metric: str = "overview") -> dict:
+    """
+    Retrieve trade analytics and statistics from the GlobeX internal trade dataset.
+    Returns dataset summary, top destinations with CAGR and tariff data,
+    all computed from the actual CSV files. ALWAYS call this before answering
+    questions about trade statistics, export volumes, or rankings.
+
+    Args:
+        metric: One of 'overview', 'destinations', 'stats'. Default 'overview'.
+
+    Returns:
+        Dictionary with dataset analytics and metadata.
+    """
+    import httpx
+    log.info("Dataset trade analytics", metric=metric)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            stats_resp = await client.get(f"{INTERNAL_API_URL}/stats")
+            dest_resp = await client.get(f"{INTERNAL_API_URL}/destinations", params={"limit": 10})
+            stats_resp.raise_for_status()
+            dest_resp.raise_for_status()
+
+        stats = stats_resp.json().get("data", {})
+        destinations = dest_resp.json().get("data", dest_resp.json())
+        if isinstance(destinations, dict):
+            destinations = destinations.get("data", [])
+
+        result = {
+            "source": "GlobeX Internal Trade Dataset (CSV)",
+            "dataset_stats": stats,
+            "top_destinations": destinations,
+            "instruction": "Use ONLY the numbers above. Do not fabricate export values or rankings.",
+        }
+        log.info("Trade analytics complete", destinations=len(destinations))
+        return result
+
+    except Exception as exc:
+        log.error("Trade analytics dataset call failed", error=str(exc))
+        return {
+            "source": "DATASET_UNAVAILABLE",
+            "error": str(exc),
+            "instruction": "Dataset unavailable. State: 'Trade analytics not found in the current GlobeX knowledge base.'",
+        }
+
+
+@tool
+async def expansion_analysis(product: str, limit: int = 5) -> dict:
+    """
+    Perform a full market expansion analysis for a product by combining market
+    research, buyer discovery, and trade analytics from the GlobeX internal datasets.
+    Use this when a user asks: 'I manufacture X, where should I export?' or
+    'Help me expand my business' or any expansion/market-entry query.
+    NEVER answer expansion questions without calling this tool first.
+
+    Args:
+        product: The product the user manufactures or wants to export.
+        limit: Number of markets/buyers to return per category (default 5).
+
+    Returns:
+        Combined market research, buyer list, and trade analytics for the product.
+    """
+    import httpx
+    log.info("Expansion analysis", product=product, limit=limit)
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            opp_resp, partner_resp, stats_resp = await asyncio.gather(
+                client.get(f"{INTERNAL_API_URL}/opportunities", params={"limit": limit, "product": product}),
+                client.get(f"{INTERNAL_API_URL}/partners", params={"limit": limit, "product": product}),
+                client.get(f"{INTERNAL_API_URL}/stats"),
+            )
+
+        opportunities = opp_resp.json().get("data", [])
+        partners = partner_resp.json().get("data", [])
+        stats = stats_resp.json().get("data", {})
+
+        return {
+            "source": "GlobeX Internal Trade Dataset (CSV)",
+            "product_queried": product,
+            "dataset_size": f"{stats.get('tradeFlowRecords', '?')} records, {stats.get('yearsRange', '?')}",
+            "top_markets": opportunities,
+            "matched_buyers": partners,
+            "recommendation_basis": "All recommendations below are derived exclusively from the trade dataset.",
+            "instruction": (
+                "Use ONLY the markets and buyers listed above. "
+                "Do not add countries or companies not in this data. "
+                "If the dataset is empty, state: 'Expansion data not found in the current GlobeX knowledge base.'"
+            ),
+        }
+
+    except Exception as exc:
+        log.error("Expansion analysis failed", error=str(exc))
+        return {
+            "source": "DATASET_UNAVAILABLE",
+            "error": str(exc),
+            "instruction": "Dataset unavailable. State: 'Expansion data not found in the current GlobeX knowledge base.'",
+        }
+
+
+import asyncio  # needed for expansion_analysis asyncio.gather
+
 # ── Tool Registry ────────────────────────────────────────────────────────────
 
 ALL_TOOLS = [
@@ -421,6 +635,10 @@ ALL_TOOLS = [
     country_rules,
     invoice_generator,
     packing_list_generator,
+    market_research,
+    buyer_discovery,
+    trade_analytics,
+    expansion_analysis,
 ]
 
 TOOL_MAP = {t.name: t for t in ALL_TOOLS}
