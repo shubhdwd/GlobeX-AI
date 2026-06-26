@@ -16,7 +16,10 @@ import {
 } from 'lucide-react';
 
 export default function DashboardLayout({ children, currentPage, onNavigate, onLogout }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Default to closed on mobile, open on desktop
+  const [sidebarOpen, setSidebarOpen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,10 +35,22 @@ export default function DashboardLayout({ children, currentPage, onNavigate, onL
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex">
+    <div className="min-h-screen bg-[#F8FAFC] flex overflow-hidden">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`bg-white border-r border-[#E2E8F0] flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
-        <div className={`h-16 flex items-center px-4 border-b border-[#E2E8F0] ${!sidebarOpen ? 'justify-center' : ''}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-[#E2E8F0] flex flex-col transition-all duration-300 transform md:relative md:translate-x-0 ${
+        sidebarOpen 
+          ? 'translate-x-0 w-64' 
+          : '-translate-x-full w-64 md:w-20 md:translate-x-0'
+      }`}>
+        <div className={`h-16 flex items-center px-4 border-b border-[#E2E8F0] ${!sidebarOpen ? 'md:justify-center' : ''}`}>
           <div className="flex items-center gap-2 overflow-hidden">
             <img src="/globex-logo.jpg" alt="GlobeX AI Logo" className="w-8 h-8 shrink-0 object-contain rounded-lg" style={{ mixBlendMode: 'multiply' }} />
             {sidebarOpen && <span className="font-bold text-[#0F172A] text-lg whitespace-nowrap tracking-tight">GlobeX AI</span>}
@@ -52,7 +67,10 @@ export default function DashboardLayout({ children, currentPage, onNavigate, onL
             return (
               <button
                 key={item.id}
-                onClick={() => onNavigate(item.id)}
+                onClick={() => {
+                  onNavigate(item.id);
+                  if (window.innerWidth < 768) setSidebarOpen(false);
+                }}
                 title={!sidebarOpen ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full ${
                   isActive 
@@ -69,7 +87,10 @@ export default function DashboardLayout({ children, currentPage, onNavigate, onL
 
         <div className="p-4 border-t border-[#E2E8F0]">
           <button 
-            onClick={() => onNavigate('developer-mode')}
+            onClick={() => {
+              onNavigate('developer-mode');
+              if (window.innerWidth < 768) setSidebarOpen(false);
+            }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors w-full mb-1"
             title={!sidebarOpen ? 'Developer Mode' : undefined}
           >
@@ -77,7 +98,10 @@ export default function DashboardLayout({ children, currentPage, onNavigate, onL
             {sidebarOpen && <span className="text-sm whitespace-nowrap">Developer Mode</span>}
           </button>
           <button 
-            onClick={() => onNavigate('settings')}
+            onClick={() => {
+              onNavigate('settings');
+              if (window.innerWidth < 768) setSidebarOpen(false);
+            }}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full mb-1 ${
               currentPage === 'settings'
                 ? 'bg-[#EFF6FF] text-[#2563EB] font-medium'
@@ -89,7 +113,10 @@ export default function DashboardLayout({ children, currentPage, onNavigate, onL
             {sidebarOpen && <span className="text-sm whitespace-nowrap">Settings</span>}
           </button>
           <button 
-            onClick={onLogout}
+            onClick={() => {
+              onLogout();
+              if (window.innerWidth < 768) setSidebarOpen(false);
+            }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#EF4444] hover:bg-[#FEF2F2] transition-colors w-full"
             title={!sidebarOpen ? 'Logout' : undefined}
           >
