@@ -3,7 +3,7 @@
  * Automatically injects the stored JWT token into every request.
  */
 
-const BASE = '/api/v1';
+const BASE = 'https://globex-ai-6.onrender.com/api/v1';
 
 function getToken() {
   return localStorage.getItem('globex_token');
