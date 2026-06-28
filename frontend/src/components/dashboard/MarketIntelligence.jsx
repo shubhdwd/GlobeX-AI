@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Globe2, TrendingUp, AlertTriangle, FileCheck, CheckCircle2, Loader2, AlertCircle, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
+import { productData } from '../../lib/mockData';
+
 export default function MarketIntelligence() {
+  const [selectedProduct, setSelectedProduct] = useState('Coffee');
   const [recommendations, setRecommendations] = useState([]);
   const [compliance, setCompliance] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,13 +34,7 @@ export default function MarketIntelligence() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/tradedata/destinations?limit=5', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to fetch market data');
-      
-      const dests = data.data || [];
+      const dests = productData[selectedProduct].marketOpportunities;
       setRecommendations(dests);
       
       if (dests.length > 0) {
@@ -54,19 +51,15 @@ export default function MarketIntelligence() {
     if (token) {
       fetchData();
     }
-  }, [token]);
+  }, [token, selectedProduct]);
 
   const fetchCompliance = async (country) => {
     setLoadingCompliance(true);
     setComplianceError(null);
     try {
-      const res = await fetch(`/api/v1/compliance/${country}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to fetch compliance data');
-      
-      setCompliance(data.data);
+      // Mock compliance assumes we only have one set per product for demo
+      const comp = productData[selectedProduct].compliance;
+      setCompliance(comp);
     } catch (err) {
       setComplianceError(err.message);
     } finally {
@@ -141,7 +134,17 @@ export default function MarketIntelligence() {
     <div className="flex flex-col gap-6 animate-fade-in pb-12">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-[#0F172A]">Market Intelligence</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-[#0F172A]">Market Intelligence</h2>
+            <select 
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="px-3 py-1.5 bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition-colors cursor-pointer"
+            >
+              <option value="Coffee">Decaffeinated Coffee</option>
+              <option value="Jaggery">Cane Sugar and Jaggery</option>
+            </select>
+          </div>
           <p className="text-sm text-[#64748B] mt-1">Discover optimal export destinations and compliance requirements.</p>
         </div>
         <button 
@@ -310,15 +313,15 @@ export default function MarketIntelligence() {
 
               <div>
                 <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">Product Name</label>
-                <input 
-                  type="text" 
+                <select 
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  placeholder="e.g. Coffee beans"
-                  className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB]"
-                  required
+                  className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm bg-white focus:outline-none focus:border-[#2563EB]"
                   disabled={analyzing}
-                />
+                >
+                  <option value="Decaffeinated Coffee">Decaffeinated Coffee</option>
+                  <option value="Cane Sugar and Jaggery">Cane Sugar and Jaggery</option>
+                </select>
               </div>
 
               <div className="pt-4 border-t border-[#E2E8F0] flex justify-end gap-3">

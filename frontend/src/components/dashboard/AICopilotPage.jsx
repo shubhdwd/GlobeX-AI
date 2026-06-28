@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, Sparkles, Brain, ArrowRight, User, Bot, Send, 
-  CheckCircle2, RefreshCw, Users, Globe2, ShieldCheck, FileText, AlertCircle
+  CheckCircle2, RefreshCw, Users, Globe2, ShieldCheck, FileText, AlertCircle, Mic
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-export default function AICopilotPage() {
+export default function AICopilotPage({ onNavigate }) {
   const [query, setQuery] = useState('');
   const [state, setState] = useState('idle'); // 'idle', 'analyzing', 'chat'
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
+  const [isListening, setIsListening] = useState(false);
   
   const [currentStep, setCurrentStep] = useState(0);
   const steps = [
@@ -29,6 +32,46 @@ export default function AICopilotPage() {
     }
   }, []);
 
+  const toggleListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Voice Commands.");
+      return;
+    }
+
+    if (isListening) {
+      setIsListening(false);
+      return; // The API will automatically stop when we don't restart it
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join('');
+      setQuery(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   const makeApiCall = async (q) => {
     setState('analyzing');
     setCurrentStep(0);
@@ -42,6 +85,7 @@ export default function AICopilotPage() {
 
     try {
       const token = localStorage.getItem('globex_token');
+      
       const res = await fetch('/api/v1/chat', {
         method: 'POST',
         headers: {
@@ -193,14 +237,16 @@ export default function AICopilotPage() {
             <p className="text-sm text-[#64748B]">Powered by GlobeX Intelligence</p>
           </div>
         </div>
-        {state !== 'idle' && (
-          <button 
-            onClick={() => { setState('idle'); setMessages([]); setQuery(''); }} 
-            className="text-[13px] font-medium text-[#64748B] hover:text-[#2563EB] flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors border border-transparent hover:border-[#BFDBFE] hover:bg-[#EFF6FF]"
-          >
-            <RefreshCw size={14} /> New Session
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {state !== 'idle' && (
+            <button 
+              onClick={() => { setState('idle'); setMessages([]); setQuery(''); }} 
+              className="text-[13px] font-medium text-[#64748B] hover:text-[#2563EB] flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors border border-transparent hover:border-[#BFDBFE] hover:bg-[#EFF6FF]"
+            >
+              <RefreshCw size={14} /> New Session
+            </button>
+          )}
+        </div>
       </div>
 
       {state === 'idle' && (
@@ -221,16 +267,26 @@ export default function AICopilotPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="e.g., I manufacture coffee in India. Find buyers in Germany."
-                  className="w-full pl-14 pr-[140px] py-5 text-[15px] outline-none text-[#0F172A] bg-transparent"
+                  className="w-full pl-14 pr-[180px] py-5 text-[15px] outline-none text-[#0F172A] bg-transparent"
                 />
-                <button 
-                  type="submit"
-                  disabled={!query.trim()}
-                  className="absolute right-2 bg-[#2563EB] text-white px-5 py-2.5 rounded-xl font-medium text-[14px] hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  Analyze
-                  <ArrowRight size={16} />
-                </button>
+                <div className="absolute right-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`p-2.5 rounded-xl transition-colors flex items-center justify-center ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-transparent hover:bg-gray-100 text-gray-500'}`}
+                    title="Voice Command"
+                  >
+                    <Mic size={20} />
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={!query.trim()}
+                    className="bg-[#2563EB] text-white px-5 py-2.5 rounded-xl font-medium text-[14px] hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    Analyze
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -287,7 +343,31 @@ export default function AICopilotPage() {
                     ? 'bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] rounded-tr-sm' 
                     : 'bg-white border border-[#E2E8F0] text-[#0F172A] rounded-tl-sm w-full min-w-[300px]'
                 }`}>
-                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                  {msg.type === 'ai' ? (
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-2 mt-4" {...props} />,
+                        h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-2 mt-3" {...props} />,
+                        h3: ({node, ...props}) => <h3 className="text-md font-bold mb-2 mt-3" {...props} />,
+                        p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                        ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-2" {...props} />,
+                        ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-2" {...props} />,
+                        li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                        strong: ({node, ...props}) => <strong className="font-bold text-[#0F172A]" {...props} />,
+                        table: ({node, ...props}) => <div className="overflow-x-auto mb-4"><table className="min-w-full divide-y divide-gray-200 border border-gray-300" {...props} /></div>,
+                        thead: ({node, ...props}) => <thead className="bg-gray-100" {...props} />,
+                        th: ({node, ...props}) => <th className="px-3 py-2 font-semibold text-left text-xs text-gray-700 uppercase tracking-wider border border-gray-300" {...props} />,
+                        td: ({node, ...props}) => <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 border border-gray-300" {...props} />,
+                        a: ({node, ...props}) => <a className="text-blue-600 hover:underline" {...props} />,
+                        code: ({node, inline, ...props}) => inline ? <code className="bg-gray-200 px-1 py-0.5 rounded text-xs" {...props} /> : <pre className="bg-gray-800 text-white p-2 rounded text-xs overflow-x-auto mb-2"><code {...props} /></pre>
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
+                  ) : (
+                    <div className="whitespace-pre-wrap">{msg.text}</div>
+                  )}
                   {msg.type === 'ai' && renderToolResults(msg.toolResults)}
                 </div>
               </div>
@@ -340,15 +420,25 @@ export default function AICopilotPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask a follow-up question or instruct the AI..."
-              className="w-full pl-5 pr-14 py-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[15px] focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] shadow-sm transition-all"
+              className="w-full pl-5 pr-24 py-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[15px] focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] shadow-sm transition-all"
             />
-            <button 
-              type="submit"
-              disabled={!query.trim()}
-              className="absolute right-2 p-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] disabled:cursor-not-allowed text-white rounded-lg transition-colors shadow-sm"
-            >
-              <Send size={18} />
-            </button>
+            <div className="absolute right-2 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`p-2 rounded-lg transition-colors flex items-center justify-center ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-transparent hover:bg-gray-200 text-gray-500'}`}
+                title="Voice Command"
+              >
+                <Mic size={18} />
+              </button>
+              <button 
+                type="submit"
+                disabled={!query.trim()}
+                className="p-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] disabled:cursor-not-allowed text-white rounded-lg transition-colors shadow-sm"
+              >
+                <Send size={18} />
+              </button>
+            </div>
           </form>
         </div>
       )}

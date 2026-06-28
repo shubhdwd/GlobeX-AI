@@ -62,23 +62,43 @@ export default function Hero({ onOpenAuth }) {
               profitable markets, evaluate demand, and connect with verified international importers.
             </p>
 
-            {/* CTAs — full width on mobile, auto on tablet+ */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            {/* CTAs — Search driven onboarding */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.target;
+                const input = form.elements.namedItem('heroQuery');
+                if (input && input.value.trim()) {
+                  localStorage.setItem('pendingProductQuery', input.value.trim());
+                  onOpenAuth();
+                }
+              }}
+              className="flex flex-col sm:flex-row gap-3 mb-6 relative w-full max-w-lg"
+            >
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  name="heroQuery"
+                  required
+                  placeholder="What product do you want to export?"
+                  className="w-full pl-11 pr-4 py-3.5 bg-white border border-[#E2E8F0] rounded-xl text-[15px] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all shadow-sm"
+                />
+              </div>
               <button
                 id="hero-cta-btn"
-                onClick={onOpenAuth}
-                className="btn-primary w-full sm:w-auto px-6 text-[15px] gap-2"
+                type="submit"
+                className="btn-primary w-full sm:w-auto px-6 py-3.5 text-[15px] gap-2 rounded-xl whitespace-nowrap shadow-md hover:shadow-lg transition-all"
               >
-                Start Market Analysis
-                <ArrowRight size={16} />
+                Analyze Market
+                <ArrowRight size={18} />
               </button>
-              <button
-                onClick={onOpenAuth}
-                className="btn-secondary w-full sm:w-auto px-6 text-[15px]"
-              >
-                View Demo
-              </button>
-            </div>
+            </form>
 
             {/* Trust strip — horizontal on mobile */}
             <div className="flex items-center gap-4 sm:gap-6 flex-wrap">

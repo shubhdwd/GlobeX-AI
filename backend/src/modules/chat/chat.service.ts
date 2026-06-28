@@ -7,6 +7,7 @@
 
 import { AppError } from '../../middleware/error.middleware';
 import type { ChatMessageDto } from './chat.schema';
+import { groqService } from './groq.service';
 
 const AGENT_SERVICE_URL = process.env.AGENT_SERVICE_URL || 'http://localhost:8000/api/v1';
 
@@ -49,31 +50,36 @@ export const chatService = {
       return res.json() as Promise<ChatResponse>;
     } catch (err: any) {
       clearTimeout(timeoutId);
-      console.warn('⚡ AI Agent timeout or error, falling back to mock response for demo:', err.message);
+      console.warn('⚡ AI Agent timeout or error, falling back to GROQ for demo:', err.message);
       
-      // Fallback Demo Response to ensure presentation never fails
-      return {
-        session_id: dto.session_id || 'demo-session',
-        intent: 'demo_fallback',
-        tools_used: ['buyer_discovery', 'market_research'],
-        rag_used: false,
-        response: "Here is the requested market analysis and buyer discovery data. I have identified the top opportunities and matching buyers for your expansion strategy.",
-        tool_results: {
-          buyer_discovery: {
-            buyers: [
-              { company_name: "Global Imports GmbH", location: "Berlin, Germany", match_score: 98 },
-              { company_name: "EuroTrade Solutions", location: "Munich, Germany", match_score: 94 },
-              { company_name: "Nexus Logistics", location: "Hamburg, Germany", match_score: 89 }
-            ]
-          },
-          market_research: {
-            opportunities: [
-              { country: "Germany", opportunity_score: 95, key_driver: "High demand for sustainable and organic supply chains." },
-              { country: "France", opportunity_score: 88, key_driver: "Growing market for premium imported goods." }
-            ]
+      try {
+        return await groqService.chat(dto);
+      } catch (groqErr: any) {
+        console.warn('⚡ Groq also failed, falling back to mock response:', groqErr.message);
+        // Fallback Demo Response to ensure presentation never fails
+        return {
+          session_id: dto.session_id || 'demo-session',
+          intent: 'demo_fallback',
+          tools_used: ['buyer_discovery', 'market_research'],
+          rag_used: false,
+          response: "Here is the requested market analysis and buyer discovery data. I have identified the top opportunities and matching buyers for your expansion strategy.",
+          tool_results: {
+            buyer_discovery: {
+              buyers: [
+                { company_name: "Global Imports GmbH", location: "Berlin, Germany", match_score: 98 },
+                { company_name: "EuroTrade Solutions", location: "Munich, Germany", match_score: 94 },
+                { company_name: "Nexus Logistics", location: "Hamburg, Germany", match_score: 89 }
+              ]
+            },
+            market_research: {
+              opportunities: [
+                { country: "Germany", opportunity_score: 95, key_driver: "High demand for sustainable and organic supply chains." },
+                { country: "France", opportunity_score: 88, key_driver: "Growing market for premium imported goods." }
+              ]
+            }
           }
-        }
-      } as ChatResponse;
+        } as ChatResponse;
+      }
     }
   },
 

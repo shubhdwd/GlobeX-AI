@@ -10,11 +10,17 @@ import {
   X,
   Loader2,
   RefreshCw,
-  TrendingUp
+  TrendingUp,
+  Globe
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { productData } from '../../lib/mockData';
 
 export default function BuyerDiscovery() {
+  const [selectedProduct, setSelectedProduct] = useState('Coffee');
   const [selectedLead, setSelectedLead] = useState(null);
   const [buyers, setBuyers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +37,7 @@ export default function BuyerDiscovery() {
   const [generatingEmail, setGeneratingEmail] = useState(false);
   const [generatedEmail, setGeneratedEmail] = useState(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('English');
 
   const { token } = useAuth();
 
@@ -47,18 +54,12 @@ export default function BuyerDiscovery() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL('/api/v1/buyers', window.location.origin);
-      if (query) url.searchParams.append('q', query);
-      
-      const res = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to fetch buyers');
-      
-      setBuyers(data.data?.buyers || []);
+      // Use mock data directly based on selected product
+      let mockList = productData[selectedProduct].buyers;
+      if (query) {
+        mockList = mockList.filter(b => b.companyName.toLowerCase().includes(query.toLowerCase()));
+      }
+      setBuyers(mockList);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -68,9 +69,9 @@ export default function BuyerDiscovery() {
 
   useEffect(() => {
     if (token) {
-      fetchBuyers();
+      fetchBuyers(searchQuery);
     }
-  }, [token]);
+  }, [token, selectedProduct]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -131,7 +132,7 @@ export default function BuyerDiscovery() {
       setIsModalOpen(false);
     } catch (err) {
       clearInterval(interval);
-      alert(err.message || 'Error running AI Buyer Discovery');
+      toast.error(err.message || 'Error running AI Buyer Discovery');
     } finally {
       setRunningDiscovery(false);
     }
@@ -144,7 +145,7 @@ export default function BuyerDiscovery() {
     setGeneratedEmail(null);
 
     try {
-      const promptText = `Write a professional B2B outreach email to ${selectedLead.companyName} located in ${selectedLead.country}. We want to export ${selectedLead.industry} to them. Keep it concise, formal, and persuasive.`;
+      const promptText = `Write a professional B2B outreach email to ${selectedLead.companyName} located in ${selectedLead.country}. We want to export ${selectedLead.industry} to them. Keep it concise, formal, and persuasive. VERY IMPORTANT: Write the email entirely in ${selectedLanguage}.`;
       
       const res = await fetch('/api/v1/chat', {
         method: 'POST',
@@ -161,6 +162,7 @@ export default function BuyerDiscovery() {
       setGeneratedEmail(json.data?.response || 'Could not generate email.');
     } catch (err) {
       setGeneratedEmail('Error generating email. Please try again.');
+      toast.error('Failed to generate email.');
     } finally {
       setGeneratingEmail(false);
     }
@@ -173,7 +175,17 @@ export default function BuyerDiscovery() {
       <div className={`flex flex-col bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden transition-all duration-300 ${selectedLead ? 'w-2/3' : 'w-full'}`}>
         
         <div className="p-5 border-b border-[#E2E8F0] flex justify-between items-center bg-white">
-          <h2 className="text-lg font-bold text-[#0F172A]">Discovered Buyers</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-[#0F172A]">Discovered Buyers</h2>
+            <select 
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="px-2 py-1 bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] rounded-md text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition-colors cursor-pointer"
+            >
+              <option value="Coffee">Decaffeinated Coffee</option>
+              <option value="Jaggery">Cane Sugar and Jaggery</option>
+            </select>
+          </div>
           <div className="flex gap-2">
             <form onSubmit={handleSearch} className="relative flex">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
@@ -335,13 +347,30 @@ export default function BuyerDiscovery() {
             </div>
           </div>
 
-          <div className="p-5 border-t border-[#E2E8F0] bg-[#F8FAFC] flex flex-col gap-2">
+          <div className="p-5 border-t border-[#E2E8F0] bg-[#F8FAFC] flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-[#475569] uppercase tracking-wider">Outreach Language</label>
+              <div className="relative">
+                <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
+                <select 
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-[#E2E8F0] rounded-lg text-sm bg-white focus:outline-none focus:border-[#2563EB] cursor-pointer"
+                >
+                  <option value="English">English</option>
+                  <option value="German">German (Deutsch)</option>
+                  <option value="Spanish">Spanish (Español)</option>
+                  <option value="French">French (Français)</option>
+                  <option value="Japanese">Japanese (日本語)</option>
+                </select>
+              </div>
+            </div>
             <button 
               onClick={handleGenerateEmail}
-              className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-colors shadow-sm"
+              className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-colors shadow-sm mt-1"
             >
               <span className="text-base">✨</span>
-              Generate Outreach Email
+              Draft Email in {selectedLanguage}
             </button>
             <button className="w-full py-2.5 flex items-center justify-center gap-2 bg-white border border-[#E2E8F0] rounded-lg text-sm font-medium text-[#334155] hover:bg-[#F1F5F9] transition-colors">
               <FileText size={16} />
@@ -371,15 +400,15 @@ export default function BuyerDiscovery() {
             <form onSubmit={handleRunDiscovery} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">Target Product</label>
-                <input 
-                  type="text" 
+                <select 
                   value={modalProduct}
                   onChange={(e) => setModalProduct(e.target.value)}
-                  placeholder="e.g. Coffee or Spices"
-                  className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB]"
-                  required
+                  className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm bg-white focus:outline-none focus:border-[#2563EB]"
                   disabled={runningDiscovery}
-                />
+                >
+                  <option value="Coffee">Decaffeinated Coffee</option>
+                  <option value="Jaggery">Cane Sugar and Jaggery</option>
+                </select>
               </div>
 
               <div>
@@ -456,11 +485,25 @@ export default function BuyerDiscovery() {
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="animate-spin text-[#2563EB] mb-4" size={40} />
                   <p className="text-[#0F172A] font-bold text-lg mb-2">Generating personalized email...</p>
-                  <p className="text-[#64748B] text-sm">Analyzing {selectedLead?.companyName} and drafting optimal value proposition.</p>
+                  <p className="text-[#64748B] text-sm">Analyzing {selectedLead?.companyName} and drafting optimal value proposition in {selectedLanguage}.</p>
                 </div>
               ) : (
-                <div className="bg-[#F8FAFC] p-4 rounded-lg border border-[#E2E8F0] whitespace-pre-wrap text-sm text-[#334155] font-mono">
-                  {generatedEmail}
+                <div className="bg-[#F8FAFC] p-4 rounded-lg border border-[#E2E8F0] text-sm text-[#334155] markdown-body">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      h1: ({node, ...props}) => <h1 className="text-lg font-bold mb-2 mt-4" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-md font-bold mb-2 mt-3" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-sm font-bold mb-2 mt-3" {...props} />,
+                      p: ({node, ...props}) => <p className="mb-3 whitespace-pre-wrap" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3" {...props} />,
+                      li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                      strong: ({node, ...props}) => <strong className="font-bold text-[#0F172A]" {...props} />,
+                    }}
+                  >
+                    {generatedEmail}
+                  </ReactMarkdown>
                 </div>
               )}
             </div>
@@ -469,7 +512,7 @@ export default function BuyerDiscovery() {
               <button 
                 onClick={() => {
                   navigator.clipboard.writeText(generatedEmail);
-                  alert('Email copied to clipboard!');
+                  toast.success('Email copied to clipboard!');
                 }}
                 disabled={generatingEmail || !generatedEmail}
                 className="px-4 py-2 text-sm font-semibold text-[#334155] bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] rounded-lg transition-colors disabled:opacity-50"

@@ -14,9 +14,15 @@ import {
   Map,
   FileCheck
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useAuth } from '../../context/AuthContext';
 
+import { productData } from '../../lib/mockData';
+
 export default function GlobalExpansion() {
+  const [selectedProduct, setSelectedProduct] = useState('Coffee');
+  const [selectedCountry, setSelectedCountry] = useState('All');
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,15 +53,7 @@ export default function GlobalExpansion() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/market/opportunities', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to fetch opportunities');
-      
-      setOpportunities(data.data?.opportunities || []);
+      setOpportunities(productData[selectedProduct].marketOpportunities);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -63,15 +61,9 @@ export default function GlobalExpansion() {
     }
   };
 
-  useEffect(() => {
-    if (token) {
-      fetchOpportunities();
-    }
-  }, [token]);
-
-  const handleRunAnalysis = async (e) => {
-    e.preventDefault();
+  const runAnalysis = async (prod, region) => {
     setRunningAnalysis(true);
+    setIsAnalysisModalOpen(true);
     setAnalysisStep(0);
 
     const interval = setInterval(() => {
@@ -79,7 +71,8 @@ export default function GlobalExpansion() {
     }, 1200);
 
     try {
-      const promptText = `Generate an expansion strategy for Indian ${product} exporters targeting ${targetRegion}.`;
+      const productName = prod === 'Coffee' ? 'Decaffeinated Coffee' : 'Cane Sugar and Jaggery';
+      const promptText = `Generate an expansion strategy for Indian ${productName} exporters targeting ${region}.`;
       
       const res = await fetch('/api/v1/chat', {
         method: 'POST',
@@ -97,42 +90,93 @@ export default function GlobalExpansion() {
         throw new Error(json.message || 'Failed to analyze markets');
       }
 
-      // Try to parse opportunities from expansion_analysis tool
       const toolResults = json.data?.tool_results || {};
       const markets = toolResults.expansion_analysis?.top_markets || [];
 
       if (markets.length > 0) {
         const formatted = markets.map((opp, idx) => ({
           id: opp.id || `opp-ai-${idx}`,
-          country: opp.country || targetRegion,
+          country: opp.country || region,
           countryCode: opp.countryCode || 'DE',
           demandScore: opp.demandScore || 90,
           growthRate: opp.growthRate || '+15%',
           competition: opp.competition || 'Medium',
           marketSize: opp.marketSize || '$1.2B',
           trend: opp.trend || 'Growing',
-          insights: opp.insights || `Strong demand for ${product} exports from India.`
+          insights: opp.insights || `Strong demand for ${productName} exports from India.`
         }));
         setOpportunities(formatted);
       } else {
-        // Fallback
-        fetchOpportunities();
+        const baseOpportunities = productData[prod].marketOpportunities;
+        
+        let countryCode = '🌍';
+        const regionLower = region.toLowerCase();
+        if (regionLower.includes('us') || regionLower.includes('america')) countryCode = 'US';
+        else if (regionLower.includes('german')) countryCode = 'DE';
+        else if (regionLower.includes('franc')) countryCode = 'FR';
+        else if (regionLower.includes('japan')) countryCode = 'JP';
+        else if (regionLower.includes('india')) countryCode = 'IN';
+        else if (regionLower.includes('arab') || regionLower.includes('uae')) countryCode = 'AE';
+        else if (regionLower.includes('kingdom') || regionLower.includes('uk')) countryCode = 'GB';
+
+        const customOpportunity = {
+          id: `custom-ai-${Date.now()}`,
+          country: region,
+          countryCode: countryCode,
+          demandScore: 92,
+          avgTariff: 0,
+          growthRate: '+14.5%',
+          competition: 'Medium',
+          marketSize: '$2.5B',
+          trend: 'Growing',
+          insights: `Strong emerging demand for Indian ${productName} in ${region}.`
+        };
+
+        const filteredBase = baseOpportunities.filter(o => o.country.toLowerCase() !== region.toLowerCase());
+        setOpportunities([customOpportunity, ...filteredBase]);
       }
+      setSelectedCountry(region);
       setIsAnalysisModalOpen(false);
     } catch (err) {
       clearInterval(interval);
       alert(err.message || 'Error occurred during market analysis.');
+      setIsAnalysisModalOpen(false);
     } finally {
       setRunningAnalysis(false);
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (token) {
+      const pendingQuery = localStorage.getItem('pendingProductQuery');
+      if (pendingQuery) {
+        localStorage.removeItem('pendingProductQuery');
+        const isJaggery = pendingQuery.toLowerCase().includes('jaggery') || pendingQuery.toLowerCase().includes('sugar');
+        const prod = isJaggery ? 'Jaggery' : 'Coffee';
+        const region = 'United States';
+        
+        setSelectedProduct(prod);
+        setTargetRegion(region);
+        runAnalysis(prod, region);
+      } else {
+        fetchOpportunities();
+      }
+    }
+  }, [token]);
+
+  const handleRunAnalysis = async (e) => {
+    e.preventDefault();
+    runAnalysis(selectedProduct, targetRegion);
   };
 
   const handleGeneratePlan = async () => {
     setLoadingPlan(true);
     setIsPlanModalOpen(true);
     try {
+      const productName = selectedProduct === 'Coffee' ? 'Decaffeinated Coffee' : 'Cane Sugar and Jaggery';
       const targetCountry = opportunities[0]?.country || 'Germany';
-      const promptText = `Create a step-by-step export execution plan for Indian ${product} exports to ${targetCountry}.`;
+      const promptText = `Create a step-by-step export execution plan for Indian ${productName} exports to ${targetCountry}.`;
       
       const res = await fetch('/api/v1/chat', {
         method: 'POST',
@@ -162,7 +206,30 @@ export default function GlobalExpansion() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#0F172A]">Global Expansion Strategy</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-[#0F172A]">Global Expansion Strategy</h2>
+            <select 
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="px-3 py-1.5 bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition-colors cursor-pointer"
+            >
+              <option value="Coffee">Decaffeinated Coffee</option>
+              <option value="Jaggery">Cane Sugar and Jaggery</option>
+            </select>
+            <select 
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="px-3 py-1.5 bg-[#F8FAFC] text-[#475569] border border-[#E2E8F0] rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition-colors cursor-pointer"
+            >
+              <option value="All">All Regions</option>
+              <option value="Germany">Germany</option>
+              <option value="United States">United States</option>
+              <option value="Japan">Japan</option>
+              <option value="France">France</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="United Arab Emirates">United Arab Emirates</option>
+            </select>
+          </div>
           <p className="text-sm text-[#64748B] mt-1">Discover new markets and AI-recommended expansion opportunities.</p>
         </div>
         <div className="flex gap-2">
@@ -219,53 +286,63 @@ export default function GlobalExpansion() {
                   </button>
                 </div>
               ) : (
-                opportunities.map((opp) => (
-                  <div key={opp.id} className="border border-[#E2E8F0] rounded-xl p-5 hover:border-[#2563EB] hover:shadow-md transition-all group bg-white">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="text-2xl" title={opp.country}>{opp.countryCode === 'US' ? '🇺🇸' : opp.countryCode === 'DE' ? '🇩🇪' : opp.countryCode === 'FR' ? '🇫🇷' : opp.countryCode === 'IN' ? '🇮🇳' : opp.countryCode === 'JP' ? '🇯🇵' : '🌍'}</div>
-                        <div>
-                          <h4 className="font-bold text-[#0F172A] text-lg group-hover:text-[#2563EB] transition-colors">{opp.country}</h4>
-                          <p className="text-xs text-[#64748B] flex items-center gap-1 mt-0.5">
-                            <MapPin size={12} /> {opp.marketSize || 'N/A'} Market Size
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
-                          opp.demandScore > 80 ? 'bg-[#D1FAE5] text-[#059669]' : 
-                          opp.demandScore > 50 ? 'bg-[#FEF3C7] text-[#D97706]' : 
-                          'bg-[#FEE2E2] text-[#DC2626]'
-                        }`}>
-                          {opp.demandScore}/100 Score
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
-                        <p className="text-[11px] font-bold text-[#94A3B8] uppercase mb-1">Growth Rate</p>
-                        <p className="text-sm font-semibold text-[#0F172A] flex items-center gap-1">
-                          <TrendingUp size={14} className="text-[#10B981]"/> {opp.growthRate}
-                        </p>
-                      </div>
-                      <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
-                        <p className="text-[11px] font-bold text-[#94A3B8] uppercase mb-1">Competition</p>
-                        <p className="text-sm font-semibold text-[#0F172A]">{opp.competition}</p>
-                      </div>
-                      <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
-                        <p className="text-[11px] font-bold text-[#94A3B8] uppercase mb-1">Market Trend</p>
-                        <p className="text-sm font-semibold text-[#0F172A] capitalize">{opp.trend || 'Stable'}</p>
-                      </div>
-                    </div>
-
-                    {opp.insights && (
-                      <div className="text-sm text-[#475569] bg-[#EFF6FF] p-3 rounded-lg border border-[#BFDBFE]">
-                        <span className="font-semibold text-[#1D4ED8]">AI Insight:</span> {opp.insights}
-                      </div>
-                    )}
+                opportunities.filter(opp => selectedCountry === 'All' || opp.country === selectedCountry).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-white">
+                    <Globe2 className="text-[#94A3B8] mb-3" size={48} />
+                    <h4 className="text-lg font-semibold text-[#0F172A]">No Data for {selectedCountry}</h4>
+                    <p className="text-[#64748B] text-sm mt-1 max-w-sm">Run a new AI market analysis for this specific region.</p>
                   </div>
-                ))
+                ) : (
+                  opportunities
+                    .filter(opp => selectedCountry === 'All' || opp.country === selectedCountry)
+                    .map((opp) => (
+                      <div key={opp.id} className="border border-[#E2E8F0] rounded-xl p-5 hover:border-[#2563EB] hover:shadow-md transition-all group bg-white">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl" title={opp.country}>{opp.countryCode === 'US' ? '🇺🇸' : opp.countryCode === 'DE' ? '🇩🇪' : opp.countryCode === 'FR' ? '🇫🇷' : opp.countryCode === 'IN' ? '🇮🇳' : opp.countryCode === 'JP' ? '🇯🇵' : opp.countryCode === 'AE' ? '🇦🇪' : opp.countryCode === 'GB' ? '🇬🇧' : '🌍'}</div>
+                            <div>
+                              <h4 className="font-bold text-[#0F172A] text-lg group-hover:text-[#2563EB] transition-colors">{opp.country}</h4>
+                              <p className="text-xs text-[#64748B] flex items-center gap-1 mt-0.5">
+                                <MapPin size={12} /> {opp.marketSize || 'N/A'} Market Size
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
+                              opp.demandScore > 80 ? 'bg-[#D1FAE5] text-[#059669]' : 
+                              opp.demandScore > 50 ? 'bg-[#FEF3C7] text-[#D97706]' : 
+                              'bg-[#FEE2E2] text-[#DC2626]'
+                            }`}>
+                              {opp.demandScore}/100 Score
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
+                            <p className="text-[11px] font-bold text-[#94A3B8] uppercase mb-1">Growth Rate</p>
+                            <p className="text-sm font-semibold text-[#0F172A] flex items-center gap-1">
+                              <TrendingUp size={14} className="text-[#10B981]"/> {opp.growthRate}
+                            </p>
+                          </div>
+                          <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
+                            <p className="text-[11px] font-bold text-[#94A3B8] uppercase mb-1">Competition</p>
+                            <p className="text-sm font-semibold text-[#0F172A]">{opp.competition}</p>
+                          </div>
+                          <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
+                            <p className="text-[11px] font-bold text-[#94A3B8] uppercase mb-1">Market Trend</p>
+                            <p className="text-sm font-semibold text-[#0F172A] capitalize">{opp.trend || 'Stable'}</p>
+                          </div>
+                        </div>
+
+                        {opp.insights && (
+                          <div className="text-sm text-[#475569] bg-[#EFF6FF] p-3 rounded-lg border border-[#BFDBFE]">
+                            <span className="font-semibold text-[#1D4ED8]">AI Insight:</span> {opp.insights}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                )
               )}
             </div>
           </div>
@@ -347,28 +424,33 @@ export default function GlobalExpansion() {
             <form onSubmit={handleRunAnalysis} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">Product to Export</label>
-                <input 
-                  type="text" 
-                  value={product}
-                  onChange={(e) => setProduct(e.target.value)}
-                  placeholder="e.g. Spices or Coffee"
-                  className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB]"
-                  required
+                <select 
+                  value={selectedProduct}
+                  onChange={(e) => setSelectedProduct(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm bg-white focus:outline-none focus:border-[#2563EB]"
                   disabled={runningAnalysis}
-                />
+                >
+                  <option value="Coffee">Decaffeinated Coffee</option>
+                  <option value="Jaggery">Cane Sugar and Jaggery</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">Target Market / Region</label>
-                <input 
-                  type="text" 
+                <select 
                   value={targetRegion}
                   onChange={(e) => setTargetRegion(e.target.value)}
-                  placeholder="e.g. Germany or USA"
                   className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB]"
                   required
                   disabled={runningAnalysis}
-                />
+                >
+                  <option value="Germany">Germany</option>
+                  <option value="United States">United States</option>
+                  <option value="Japan">Japan</option>
+                  <option value="France">France</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="United Arab Emirates">United Arab Emirates</option>
+                </select>
               </div>
 
               <div className="pt-4 border-t border-[#E2E8F0] flex justify-end gap-3">
@@ -431,8 +513,22 @@ export default function GlobalExpansion() {
                   <p className="text-sm text-[#64748B]">Synthesizing market entry directives...</p>
                 </div>
               ) : (
-                <div className="prose max-w-none whitespace-pre-line text-sm leading-relaxed">
-                  {executionPlan}
+                <div className="prose max-w-none text-sm leading-relaxed markdown-body">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      h1: ({node, ...props}) => <h1 className="text-lg font-bold mb-2 mt-4" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-md font-bold mb-2 mt-3" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-sm font-bold mb-2 mt-3" {...props} />,
+                      p: ({node, ...props}) => <p className="mb-3 whitespace-pre-wrap" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3" {...props} />,
+                      li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                      strong: ({node, ...props}) => <strong className="font-bold text-[#0F172A]" {...props} />,
+                    }}
+                  >
+                    {executionPlan}
+                  </ReactMarkdown>
                 </div>
               )}
             </div>

@@ -2,6 +2,8 @@ import { AppError } from '../../middleware/error.middleware';
 import type { ChatMessageDto } from './chat.schema';
 import type { ChatResponse } from './chat.service';
 
+// Trigger nodemon restart to load latest .env variables
+
 export const groqService = {
   /**
    * Send a message to Groq API and return a structured response mimicking the Python AI agent.

@@ -25,6 +25,8 @@ import DocumentsPage from './components/dashboard/DocumentsPage';
 import AnalyticsDashboard from './components/dashboard/AnalyticsDashboard';
 import SettingsPage from './components/dashboard/SettingsPage';
 import { useAuth } from './context/AuthContext';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   const { isAuthenticated, logout } = useAuth();
@@ -37,11 +39,21 @@ export default function App() {
     window.scrollTo(0, 0);
   }, [currentPage]);
 
-  // If authenticated, make sure they are on 'agents' or 'profile'
-  // Actually, we'll just let the state manage it. The AuthModal onSuccess sets it.
+  const pageVariants = {
+    initial: { opacity: 0, y: 10 },
+    in: { opacity: 1, y: 0 },
+    out: { opacity: 0, y: -10 }
+  };
+
+  const pageTransition = {
+    type: 'tween',
+    ease: 'easeInOut',
+    duration: 0.2
+  };
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
+      <Toaster position="top-right" toastOptions={{ className: 'text-sm font-medium text-[#0F172A]' }} />
       {/* Conditionally render the correct header */}
       {currentPage === 'landing' ? (
         <Navbar 
@@ -55,42 +67,54 @@ export default function App() {
       
       {/* Main Content Area */}
       <div className="flex-1">
-        {currentPage === 'landing' ? (
-          <>
-            <Hero onOpenAuth={() => setAuthOpen(true)} />
-            <TrustBar />
-            <ProblemSection />
-            <Solutions />
-            <FeaturesMatrix />
-            <HowItWorks />
-            <DashboardPreview />
-            <Pricing onOpenAuth={() => setAuthOpen(true)} />
-            <FAQ />
-          </>
-        ) : currentPage === 'profile' ? (
-          <ProfileSetup onBack={() => setCurrentPage('dashboard')} />
-        ) : currentPage === 'developer-mode' ? (
-          <AiAgentsHub 
-            onBackToLanding={() => setCurrentPage('dashboard')} 
-            onNavigateToProfile={() => setCurrentPage('profile')}
-          />
-        ) : (
-          <DashboardLayout 
-            currentPage={currentPage} 
-            onNavigate={setCurrentPage} 
-            onLogout={() => { logout(); setCurrentPage('landing'); }}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            initial="initial"
+            animate="in"
+            exit="out"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="h-full"
           >
-            {currentPage === 'dashboard' && <DashboardHome onNavigate={setCurrentPage} />}
-            {currentPage === 'global-expansion' && <GlobalExpansion />}
-            {currentPage === 'markets' && <MarketIntelligence />}
-            {currentPage === 'buyers' && <BuyerDiscovery />}
-            {currentPage === 'compliance' && <TradeCompliance />}
-            {currentPage === 'documents' && <DocumentsPage />}
-            {currentPage === 'analytics' && <AnalyticsDashboard />}
-            {currentPage === 'copilot' && <AICopilotPage onNavigate={setCurrentPage} />}
-            {currentPage === 'settings' && <SettingsPage />}
-          </DashboardLayout>
-        )}
+            {currentPage === 'landing' ? (
+              <>
+                <Hero onOpenAuth={() => setAuthOpen(true)} />
+                <TrustBar />
+                <ProblemSection />
+                <Solutions />
+                <FeaturesMatrix />
+                <HowItWorks />
+                <DashboardPreview />
+                <Pricing onOpenAuth={() => setAuthOpen(true)} />
+                <FAQ />
+              </>
+            ) : currentPage === 'profile' ? (
+              <ProfileSetup onBack={() => setCurrentPage('dashboard')} />
+            ) : currentPage === 'developer-mode' ? (
+              <AiAgentsHub 
+                onBackToLanding={() => setCurrentPage('dashboard')} 
+                onNavigateToProfile={() => setCurrentPage('profile')}
+              />
+            ) : (
+              <DashboardLayout 
+                currentPage={currentPage} 
+                onNavigate={setCurrentPage} 
+                onLogout={() => { logout(); setCurrentPage('landing'); }}
+              >
+                {currentPage === 'dashboard' && <DashboardHome onNavigate={setCurrentPage} />}
+                {currentPage === 'global-expansion' && <GlobalExpansion />}
+                {currentPage === 'markets' && <MarketIntelligence />}
+                {currentPage === 'buyers' && <BuyerDiscovery />}
+                {currentPage === 'compliance' && <TradeCompliance />}
+                {currentPage === 'documents' && <DocumentsPage />}
+                {currentPage === 'analytics' && <AnalyticsDashboard />}
+                {currentPage === 'copilot' && <AICopilotPage onNavigate={setCurrentPage} />}
+                {currentPage === 'settings' && <SettingsPage />}
+              </DashboardLayout>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
       
       {/* Footer is only shown on non-sidebar pages */}
@@ -101,7 +125,15 @@ export default function App() {
       <AuthModal 
         isOpen={authOpen} 
         onClose={() => setAuthOpen(false)}
-        onAuthSuccess={() => { setAuthOpen(false); setCurrentPage('dashboard'); }}
+        onAuthSuccess={() => { 
+          setAuthOpen(false); 
+          const pending = localStorage.getItem('pendingProductQuery');
+          if (pending) {
+            setCurrentPage('global-expansion');
+          } else {
+            setCurrentPage('dashboard'); 
+          }
+        }}
       />
     </div>
   );

@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, FileText, CheckCircle2, AlertTriangle, Loader2, AlertCircle, Search, Filter, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
+import { productData } from '../../lib/mockData';
+
 export default function TradeCompliance() {
+  const [selectedProduct, setSelectedProduct] = useState('Coffee');
   const [countries, setCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [complianceData, setComplianceData] = useState(null);
@@ -34,17 +37,12 @@ export default function TradeCompliance() {
     const fetchCountries = async () => {
       setLoadingCountries(true);
       try {
-        const res = await fetch('/api/v1/compliance/countries', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to fetch countries');
-        
-        const countryList = data.data || [];
+        const comp = productData[selectedProduct].compliance;
+        const countryList = [{ countryCode: comp.country.includes('Germany') ? 'DE' : 'US', country: comp.country }];
         setCountries(countryList);
         
         if (countryList.length > 0) {
-          handleSelectCountry(countryList[0].countryCode || countryList[0].country);
+          handleSelectCountry(countryList[0].countryCode || countryList[0].country, comp);
         }
       } catch (err) {
         setError(err.message);
@@ -56,20 +54,36 @@ export default function TradeCompliance() {
     if (token) {
       fetchCountries();
     }
-  }, [token]);
+  }, [token, selectedProduct]);
 
-  const handleSelectCountry = async (countryId) => {
+  const handleSelectCountry = async (countryId, compData = null) => {
     setSelectedCountry(countryId);
     setLoadingData(true);
     setDataError(null);
     try {
-      const res = await fetch(`/api/v1/compliance/${countryId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const comp = compData || productData[selectedProduct].compliance;
+      // Convert tariffs and regulations to match the UI expected grouped structure
+      const mockRequirements = [];
+      comp.tariffs.forEach((t, i) => mockRequirements.push({
+        id: `t-${i}`, documentName: t.product, description: `${t.tariffRate} - ${t.notes}`, isRequired: true, category: 'Tariffs', authority: 'Customs', processingTime: 'N/A', estimatedCost: t.tariffRate
+      }));
+      comp.regulations.forEach((r, i) => mockRequirements.push({
+        id: `r-${i}`, documentName: r.title, description: r.description, isRequired: true, category: 'Regulations', authority: 'Ministry', processingTime: '2-4 weeks', estimatedCost: 'Varies'
+      }));
+
+      const grouped = mockRequirements.reduce((acc, req) => {
+        if (!acc[req.category]) acc[req.category] = [];
+        acc[req.category].push(req);
+        return acc;
+      }, {});
+
+      setComplianceData({
+        country: comp.country,
+        countryCode: countryId,
+        totalRequirements: mockRequirements.length,
+        requirements: mockRequirements,
+        grouped
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to fetch compliance data');
-      
-      setComplianceData(data.data);
     } catch (err) {
       setDataError(err.message);
       setComplianceData(null);
@@ -161,9 +175,19 @@ export default function TradeCompliance() {
         return acc;
       }, {});
 
+      let countryCode = '🌍';
+      const regionLower = modalCountry.toLowerCase();
+      if (regionLower.includes('us') || regionLower.includes('america')) countryCode = 'US';
+      else if (regionLower.includes('german')) countryCode = 'DE';
+      else if (regionLower.includes('franc')) countryCode = 'FR';
+      else if (regionLower.includes('japan')) countryCode = 'JP';
+      else if (regionLower.includes('india')) countryCode = 'IN';
+      else if (regionLower.includes('arab') || regionLower.includes('uae')) countryCode = 'AE';
+      else if (regionLower.includes('kingdom') || regionLower.includes('uk')) countryCode = 'GB';
+
       setComplianceData({
         country: modalCountry,
-        countryCode: 'AE',
+        countryCode: countryCode,
         totalRequirements: mockRequirements.length,
         requirements: mockRequirements,
         grouped
@@ -192,7 +216,17 @@ export default function TradeCompliance() {
     <div className="flex flex-col gap-6 animate-fade-in h-[calc(100vh-120px)]">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-[#0F172A]">Trade Compliance Workspace</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-[#0F172A]">Trade Compliance Workspace</h2>
+            <select 
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="px-3 py-1.5 bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#2563EB] transition-colors cursor-pointer"
+            >
+              <option value="Coffee">Decaffeinated Coffee</option>
+              <option value="Jaggery">Cane Sugar and Jaggery</option>
+            </select>
+          </div>
           <p className="text-sm text-[#64748B] mt-1">Verify regulatory requirements, tariffs, and necessary documentation.</p>
         </div>
         <button 
@@ -381,15 +415,15 @@ export default function TradeCompliance() {
             <form onSubmit={runComplianceCheck} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">Export Product</label>
-                <input 
-                  type="text" 
+                <select 
                   value={modalProduct}
                   onChange={(e) => setModalProduct(e.target.value)}
-                  placeholder="e.g. Organic Turmeric or Coffee"
-                  className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB]"
-                  required
+                  className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm bg-white focus:outline-none focus:border-[#2563EB]"
                   disabled={checkingCompliance}
-                />
+                >
+                  <option value="Coffee">Decaffeinated Coffee</option>
+                  <option value="Jaggery">Cane Sugar and Jaggery</option>
+                </select>
               </div>
 
               <div>

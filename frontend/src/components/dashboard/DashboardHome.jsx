@@ -1,51 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, Users, FileText, Activity, ArrowUpRight, Package, 
-  Globe2, Clock, Target, Search, X, ArrowRight, Loader2, Database, BarChart3
+  Globe2, Clock, Target, Search, X, ArrowRight, Loader2, Database, BarChart3, Newspaper, Sparkles
 } from 'lucide-react';
+import Joyride, { STATUS } from 'react-joyride';
 import { useAuth } from '../../context/AuthContext';
+import { mockDashboardSummary } from '../../lib/mockData';
 
 export default function DashboardHome({ onNavigate }) {
   const { user, token } = useAuth();
   const userName = user?.name?.split(' ')[0] || 'Exporter';
   
-  const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  const [analyzeData, setAnalyzeData] = useState({
-    product: '',
-    origin: 'India',
-    destination: '',
-    budget: '',
-    prompt: ''
-  });
+  // Joyride State
+  const [runTour, setRunTour] = useState(false);
+  const [tourSteps] = useState([
+    {
+      target: '.tour-step-1',
+      content: 'Welcome to GlobeX AI! This Executive Summary gives you an instant, AI-generated snapshot of your best export opportunities.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '.tour-step-2',
+      content: 'Here are your top-level metrics. We analyze millions of data points to calculate your global opportunity score.',
+      placement: 'bottom',
+    },
+    {
+      target: '.tour-step-3',
+      content: 'Jump straight into AI market analysis to find new countries to export to.',
+      placement: 'left',
+    },
+    {
+      target: '.tour-step-4',
+      content: 'Stay updated with real-time geopolitical and trade news that could affect your supply chain.',
+      placement: 'left',
+    }
+  ]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const res = await fetch('/api/v1/dashboard', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const json = await res.json();
-        if (res.ok) {
-          setData(json.data);
-        }
+        setData(mockDashboardSummary);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
       } finally {
         setLoading(false);
+        // Only run tour if it's their first time
+        if (!localStorage.getItem('globex_tour_completed')) {
+          setTimeout(() => setRunTour(true), 1000);
+        }
       }
     };
     if (token) fetchDashboard();
   }, [token]);
 
-  const handleAnalyzeSubmit = (e) => {
-    e.preventDefault();
-    const query = `Analyze market for ${analyzeData.product}. Origin: ${analyzeData.origin}. Destination: ${analyzeData.destination || 'Global'}. Budget: ${analyzeData.budget || 'Not specified'}. Additional Prompt: ${analyzeData.prompt}`;
-    localStorage.setItem('copilotPendingQuery', query);
-    setIsAnalyzeModalOpen(false);
-    if (onNavigate) onNavigate('copilot');
+  const handleJoyrideCallback = (data) => {
+    const { status } = data;
+    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+      localStorage.setItem('globex_tour_completed', 'true');
+      setRunTour(false);
+    }
   };
 
   const handleRecentSearch = (queryText) => {
@@ -58,6 +75,21 @@ export default function DashboardHome({ onNavigate }) {
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in pb-12">
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous={true}
+        showProgress={true}
+        showSkipButton={true}
+        callback={handleJoyrideCallback}
+        styles={{
+          options: {
+            primaryColor: '#2563EB',
+            textColor: '#0F172A',
+            zIndex: 1000,
+          }
+        }}
+      />
       
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -69,9 +101,24 @@ export default function DashboardHome({ onNavigate }) {
           <button className="px-4 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm font-medium text-[#334155] hover:bg-[#F8FAFC]">
             Download Report
           </button>
-          <button onClick={() => setIsAnalyzeModalOpen(true)} className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => { if (onNavigate) onNavigate('global-expansion'); }} className="tour-step-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm shadow-blue-500/20">
             Analyze New Market
           </button>
+        </div>
+      </div>
+
+      {/* AI Executive Summary Widget */}
+      <div className="tour-step-1 bg-gradient-to-r from-[#EFF6FF] to-[#F8FAFC] border border-[#BFDBFE] rounded-xl p-5 shadow-sm flex gap-4 items-start">
+        <div className="w-10 h-10 rounded-full bg-[#2563EB] text-white flex flex-shrink-0 items-center justify-center shadow-md">
+          <Sparkles size={20} />
+        </div>
+        <div>
+          <h3 className="font-bold text-[#1E3A8A] mb-1 flex items-center gap-2">
+            AI Executive Summary
+          </h3>
+          <p className="text-sm text-[#334155] leading-relaxed">
+            Your best opportunity right now is exporting <strong>Coffee to Germany</strong> due to a recent 12% drop in tariffs and high buyer intent. We recommend running a new Buyer Discovery scan in the EU region to capture this demand.
+          </p>
         </div>
       </div>
 
@@ -81,8 +128,8 @@ export default function DashboardHome({ onNavigate }) {
           <Loader2 className="animate-spin text-[#2563EB]" size={32} />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
+        <div className="tour-step-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#EFF6FF] flex items-center justify-center text-[#2563EB]">
                 <Target size={20} />
@@ -95,7 +142,7 @@ export default function DashboardHome({ onNavigate }) {
             <p className="text-2xl font-bold text-[#0F172A] mt-1">{overview.avgLeadScore}/100</p>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
+          <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#FDF4FF] flex items-center justify-center text-[#C026D3]">
                 <Users size={20} />
@@ -108,7 +155,7 @@ export default function DashboardHome({ onNavigate }) {
             <p className="text-2xl font-bold text-[#0F172A] mt-1">{overview.buyersFound}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
+          <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#FFFBEB] flex items-center justify-center text-[#D97706]">
                 <FileText size={20} />
@@ -121,7 +168,7 @@ export default function DashboardHome({ onNavigate }) {
             <p className="text-2xl font-bold text-[#0F172A] mt-1">{overview.productsRegistered}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
+          <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#ECFDF5] flex items-center justify-center text-[#059669]">
                 <Globe2 size={20} />
@@ -167,7 +214,7 @@ export default function DashboardHome({ onNavigate }) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent AI Activity & Analyses */}
+        {/* Left Column: Recent Activity */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-sm flex flex-col">
             <div className="p-5 border-b border-[#E2E8F0] flex justify-between items-center bg-[#F8FAFC]">
@@ -183,16 +230,16 @@ export default function DashboardHome({ onNavigate }) {
                 { title: "Tariff Analysis: Spice Exports to USA", type: "Market Intelligence", time: "5 hours ago", status: "Complete" },
                 { title: "Automotive Parts Buyers in Japan", type: "Buyer Discovery", time: "1 day ago", status: "Complete" },
               ].map((analysis, i) => (
-                <div key={i} className="flex items-center justify-between p-5 border-b border-[#F1F5F9] last:border-0 hover:bg-[#F8FAFC] transition-colors cursor-pointer">
+                <div key={i} className="flex items-center justify-between p-5 border-b border-[#F1F5F9] last:border-0 hover:bg-[#F8FAFC] transition-colors cursor-pointer group">
                   <div className="flex flex-col gap-1">
-                    <span className="font-semibold text-[14px] text-[#0F172A]">{analysis.title}</span>
+                    <span className="font-semibold text-[14px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors">{analysis.title}</span>
                     <div className="flex items-center gap-2 text-[12px] text-[#64748B]">
                       <span className="bg-[#E2E8F0] px-2 py-0.5 rounded text-[#475569]">{analysis.type}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1"><Clock size={12} /> {analysis.time}</span>
                     </div>
                   </div>
-                  <ArrowUpRight size={16} className="text-[#94A3B8]" />
+                  <ArrowUpRight size={16} className="text-[#94A3B8] group-hover:text-[#2563EB]" />
                 </div>
               ))}
             </div>
@@ -228,8 +275,35 @@ export default function DashboardHome({ onNavigate }) {
           </div>
         </div>
 
-        {/* Quick Actions & Recent Searches */}
+        {/* Right Column: News & Quick Actions */}
         <div className="flex flex-col gap-6">
+          
+          {/* Trade News Widget */}
+          <div className="tour-step-4 bg-white rounded-xl border border-[#E2E8F0] shadow-sm flex flex-col">
+            <div className="p-5 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+              <h3 className="font-bold text-[#0F172A] flex items-center gap-2">
+                <Newspaper size={18} className="text-[#D97706]" />
+                Global Trade Pulse
+              </h3>
+            </div>
+            <div className="p-4 flex flex-col gap-4">
+              <div className="flex flex-col gap-1 cursor-pointer group">
+                <span className="text-[10px] font-bold text-[#D97706] uppercase tracking-wider">Geopolitics • 2h ago</span>
+                <p className="text-[13px] font-semibold text-[#0F172A] group-hover:text-[#2563EB] transition-colors leading-snug">EU Carbon Border Tax goes into effect, impacting steel and cement exports.</p>
+              </div>
+              <div className="w-full h-px bg-[#F1F5F9]"></div>
+              <div className="flex flex-col gap-1 cursor-pointer group">
+                <span className="text-[10px] font-bold text-[#10B981] uppercase tracking-wider">Logistics • 5h ago</span>
+                <p className="text-[13px] font-semibold text-[#0F172A] group-hover:text-[#2563EB] transition-colors leading-snug">Suez Canal delays ease, reducing shipping costs for Europe-bound freight by 4%.</p>
+              </div>
+              <div className="w-full h-px bg-[#F1F5F9]"></div>
+              <div className="flex flex-col gap-1 cursor-pointer group">
+                <span className="text-[10px] font-bold text-[#2563EB] uppercase tracking-wider">Agri-Trade • 1d ago</span>
+                <p className="text-[13px] font-semibold text-[#0F172A] group-hover:text-[#2563EB] transition-colors leading-snug">Global coffee prices surge amidst supply shortages in Latin America.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-sm flex flex-col">
             <div className="p-5 border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <h3 className="font-bold text-[#0F172A]">Quick Actions</h3>
@@ -279,104 +353,6 @@ export default function DashboardHome({ onNavigate }) {
           </div>
         </div>
       </div>
-
-      {/* Analyze Modal */}
-      {isAnalyzeModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-[#E2E8F0] overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-[#E2E8F0] bg-[#F8FAFC]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center text-[#2563EB] shadow-sm border border-[#DBEAFE]">
-                  <Target size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#0F172A]">Analyze New Market</h3>
-                  <p className="text-xs text-[#64748B]">Let AI build your expansion strategy.</p>
-                </div>
-              </div>
-              <button onClick={() => setIsAnalyzeModalOpen(false)} className="text-[#94A3B8] hover:text-[#0F172A] p-1 rounded-md hover:bg-[#F1F5F9] transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAnalyzeSubmit} className="p-6 flex flex-col gap-5">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#334155]">Product</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Organic Coffee Beans" 
-                  required
-                  value={analyzeData.product}
-                  onChange={e => setAnalyzeData({...analyzeData, product: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] shadow-sm"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-semibold text-[#334155]">Origin Country</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. India" 
-                    required
-                    value={analyzeData.origin}
-                    onChange={e => setAnalyzeData({...analyzeData, origin: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] shadow-sm"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-semibold text-[#334155]">Target Country (Optional)</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Germany" 
-                    value={analyzeData.destination}
-                    onChange={e => setAnalyzeData({...analyzeData, destination: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] shadow-sm"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#334155]">Budget (Optional)</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. $50,000" 
-                  value={analyzeData.budget}
-                  onChange={e => setAnalyzeData({...analyzeData, budget: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] shadow-sm"
-                />
-              </div>
-              
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#334155]">Specific Goals / Prompt</label>
-                <textarea 
-                  rows={3}
-                  placeholder="What specifically do you want the AI to analyze?"
-                  value={analyzeData.prompt}
-                  onChange={e => setAnalyzeData({...analyzeData, prompt: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] shadow-sm resize-none"
-                ></textarea>
-              </div>
-              
-              <div className="flex justify-end gap-3 mt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setIsAnalyzeModalOpen(false)}
-                  className="px-5 py-2.5 text-sm font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium rounded-lg shadow-sm transition-colors flex items-center gap-2"
-                >
-                  Run Copilot Analysis <ArrowRight size={16} />
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

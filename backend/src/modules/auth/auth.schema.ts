@@ -6,9 +6,9 @@ export const signupSchema = z.object({
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters'),
-  companyName: z.string().min(2).max(200),
-  companyType: z.enum(['Manufacturer', 'Trader', 'MSME', 'Exporter', 'Distributor', 'Other']),
-  industry: z.string().min(2).max(100),
+  companyName: z.string().min(2).max(200).optional(),
+  companyType: z.enum(['Manufacturer', 'Trader', 'MSME', 'Exporter', 'Distributor', 'Other']).optional(),
+  industry: z.string().min(2).max(100).optional(),
 });
 
 export const loginSchema = z.object({

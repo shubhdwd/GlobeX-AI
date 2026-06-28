@@ -54,6 +54,8 @@ async function request(method, path, body = null, timeoutMs = 30000) {
   }
 }
 
+import { mockDashboardSummary, mockBuyers, mockMarketOpportunities, mockCompliance } from './mockData';
+
 // ─── Auth ──────────────────────────────────────────────
 export const authApi = {
   signup: (body) => request('POST', '/auth/signup', body),
@@ -63,28 +65,25 @@ export const authApi = {
 
 // ─── Dashboard ─────────────────────────────────────────
 export const dashboardApi = {
-  getSummary: () => request('GET', '/dashboard/'),
+  getSummary: async () => mockDashboardSummary,
 };
 
 // ─── Buyers ────────────────────────────────────────────
 export const buyersApi = {
-  search: (params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    return request('GET', `/buyers/?${qs}`);
-  },
-  getById: (id) => request('GET', `/buyers/${id}`),
+  search: async (params = {}) => ({ buyers: mockBuyers }),
+  getById: async (id) => mockBuyers.find(b => b.id === id),
 };
 
 // ─── Market Intelligence ───────────────────────────────
 export const marketApi = {
-  getOpportunities: () => request('GET', '/market/opportunities'),
+  getOpportunities: async () => mockMarketOpportunities,
   analyze: (body) => request('POST', '/market/analyze', body),
 };
 
 // ─── Compliance ────────────────────────────────────────
 export const complianceApi = {
-  getByCountry: (country) => request('GET', `/compliance/${country}`),
-  getAllCountries: () => request('GET', '/compliance/countries'),
+  getByCountry: async (country) => mockCompliance,
+  getAllCountries: async () => ['Germany', 'United States', 'UAE', 'Japan', 'France'],
 };
 
 // ─── Outreach ──────────────────────────────────────────
@@ -95,7 +94,7 @@ export const outreachApi = {
 
 // ─── Leads ─────────────────────────────────────────────
 export const leadsApi = {
-  getAll: () => request('GET', '/leads/'),
+  getAll: async () => mockBuyers,
 };
 
 // ─── Chat ──────────────────────────────────────────────
