@@ -17,9 +17,9 @@ export const authService = {
       name: dto.name,
       email: dto.email,
       password: hashedPassword,
-      companyName: dto.companyName,
-      companyType: dto.companyType,
-      industry: dto.industry,
+      companyName: dto.companyName || '',
+      companyType: dto.companyType || '',
+      industry: dto.industry || '',
     });
 
     const tokens = generateTokenPair({ userId: user.id, email: user.email, role: user.role });

@@ -3,7 +3,7 @@ import {
   TrendingUp, Users, FileText, Activity, ArrowUpRight, Package, 
   Globe2, Clock, Target, Search, X, ArrowRight, Loader2, Database, BarChart3, Newspaper, Sparkles
 } from 'lucide-react';
-import Joyride, { STATUS } from 'react-joyride';
+import { Joyride, STATUS } from 'react-joyride';
 import { useAuth } from '../../context/AuthContext';
 import { mockDashboardSummary } from '../../lib/mockData';
 
