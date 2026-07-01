@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Queues } from '../../orchestration/pipeline';
-import { Collections } from '../../shared/db/firebase';
+import { prisma } from '../../config/database';
 
 export const startPipeline = async (req: Request, res: Response) => {
   try {
@@ -10,26 +10,25 @@ export const startPipeline = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'icpDefinition is required' });
     }
 
-    // 1. Create a new Market Segment in Firebase
-    const segmentRef = Collections.MarketSegments.doc();
-    await segmentRef.set({
-      name: segmentName || 'Unnamed Segment',
-      icpDefinition,
-      insights: null,
-      confidenceScore: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    // 1. Create a new Market Segment in Prisma
+    const segment = await prisma.marketSegment.create({
+      data: {
+        name: segmentName || 'Unnamed Segment',
+        icpDefinition,
+        insights: {},
+        confidenceScore: 0,
+      }
     });
 
     // 2. Enqueue the Market Research Job
     await Queues.MarketResearch.add('research-market', {
-      segmentId: segmentRef.id,
+      segmentId: segment.id,
       icpDefinition,
     });
 
     return res.status(202).json({
       message: 'Pipeline started successfully',
-      segmentId: segmentRef.id,
+      segmentId: segment.id,
     });
   } catch (error: any) {
     console.error(`[PipelineController] Error: ${error.message}`);

@@ -290,3 +290,121 @@ enum AuditAction {
   LOGOUT
   EXPORT
 }
+
+enum PipelineState {
+  RESEARCHING
+  DISCOVERING
+  QUALIFYING
+  COMPLIANCE_REVIEW
+  OUTREACH_DRAFTED
+  COMPLIANCE_PRE_SEND
+  SENDING
+  SENT
+  FAILED
+  NEEDS_REVIEW
+}
+
+model MarketSegment {
+  id              String    @id @default(uuid())
+  icpDefinition   Json
+  name            String?
+  insights        Json?
+  confidenceScore Float?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  companies       Company[]
+
+  @@map("market_segments")
+}
+
+model Company {
+  id              String          @id @default(uuid())
+  marketSegmentId String?
+  name            String
+  domain          String?         @unique
+  industry        String?
+  size            String?
+  confidenceScore Float?
+  provenance      String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  marketSegment   MarketSegment?  @relation(fields: [marketSegmentId], references: [id])
+  contacts        Contact[]
+  qualifiedLeads  QualifiedLead[]
+
+  @@map("companies")
+}
+
+model Contact {
+  id              String  @id @default(uuid())
+  companyId       String
+  firstName       String?
+  lastName        String?
+  title           String?
+  email           String? @unique
+  linkedin        String?
+  confidenceScore Float?
+  provenance      String?
+
+  // Compliance fields
+  consentStatus String  @default("UNKNOWN")
+  dataSource    String?
+  legalBasis    String?
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  qualifiedLeads QualifiedLead[]
+
+  @@map("contacts")
+}
+
+model QualifiedLead {
+  id               String            @id @default(uuid())
+  companyId        String
+  contactId        String
+  pipelineState    PipelineState     @default(RESEARCHING)
+  score            Float?
+  rubricReasoning  Json?
+  status           String            @default("PENDING") // PASS, FAIL, NEEDS_REVIEW
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  company          Company           @relation(fields: [companyId], references: [id])
+  contact          Contact           @relation(fields: [contactId], references: [id])
+  outreachMessages OutreachMessage[]
+
+  @@map("qualified_leads")
+}
+
+model OutreachMessage {
+  id               String            @id @default(uuid())
+  qualifiedLeadId  String
+  channel          String            @default("EMAIL")
+  subject          String?
+  body             String
+  status           String            @default("DRAFTED") // DRAFTED, COMPLIANCE_PRE_SEND, SENDING, SENT
+  autoSend         Boolean           @default(false)
+  scheduledAt      DateTime?
+  sentAt           DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  qualifiedLead    QualifiedLead     @relation(fields: [qualifiedLeadId], references: [id])
+  complianceChecks ComplianceCheck[]
+
+  @@map("outreach_messages")
+}
+
+model ComplianceCheck {
+  id                String           @id @default(uuid())
+  outreachMessageId String?
+  targetType        String // CONTACT, OUTREACH
+  targetId          String
+  status            String // PASS, FAIL, FLAGGED
+  ruleTriggered     String?
+  reasoning         String?
+  createdAt         DateTime         @default(now())
+  outreachMessage   OutreachMessage? @relation(fields: [outreachMessageId], references: [id])
+
+  @@map("compliance_checks")
+}
+

@@ -1,7 +1,7 @@
 import { Job } from 'bullmq';
 import { ComplianceGateJob } from '../../shared/types';
 import { PipelineOrchestrator } from '../../orchestration/pipeline';
-import { Collections } from '../../shared/db/firebase';
+import { prisma } from '../../config/database';
 
 export const complianceProcessor = async (job: Job<ComplianceGateJob>) => {
   const { targetType, targetId, nextStateIfPass } = job.data;
@@ -13,11 +13,13 @@ export const complianceProcessor = async (job: Job<ComplianceGateJob>) => {
     let reasoning = 'Passed all compliance checks.';
 
     if (targetType === 'LEAD') {
-      const leadDoc = await Collections.QualifiedLeads.doc(targetId).get();
-      if (!leadDoc.exists) throw new Error(`Lead ${targetId} not found`);
+      const lead = await prisma.qualifiedLead.findUnique({
+        where: { id: targetId },
+        include: { contact: true }
+      });
+      if (!lead) throw new Error(`Lead ${targetId} not found`);
       
-      const contactDoc = await Collections.Contacts.doc(leadDoc.data()!.contactId).get();
-      const contactData = contactDoc.data()!;
+      const contactData = lead.contact;
 
       // Mock DNC / Consent check
       if (contactData.consentStatus === 'OPT_OUT') {
@@ -26,16 +28,17 @@ export const complianceProcessor = async (job: Job<ComplianceGateJob>) => {
         reasoning = 'Contact has explicitly opted out.';
       }
     } else if (targetType === 'OUTREACH') {
-      const outreachDoc = await Collections.OutreachMessages.doc(targetId).get();
-      if (!outreachDoc.exists) throw new Error(`Outreach ${targetId} not found`);
-      const outreachData = outreachDoc.data()!;
+      const outreach = await prisma.outreachMessage.findUnique({
+        where: { id: targetId }
+      });
+      if (!outreach) throw new Error(`Outreach ${targetId} not found`);
 
       // Mock content check
-      if (outreachData.body.includes('GUARANTEE')) {
+      if (outreach.body.includes('GUARANTEE')) {
         passed = false;
         ruleTriggered = 'PROHIBITED_CLAIM';
         reasoning = 'Content contains prohibited guarantee language.';
-      } else if (!outreachData.body.includes('unsubscribe')) {
+      } else if (!outreach.body.includes('unsubscribe')) {
         passed = false;
         ruleTriggered = 'MISSING_DISCLOSURE';
         reasoning = 'Missing unsubscribe link.';
@@ -43,14 +46,15 @@ export const complianceProcessor = async (job: Job<ComplianceGateJob>) => {
     }
 
     // 1. Immutable Audit Log (ComplianceCheck)
-    await Collections.ComplianceChecks.add({
-      targetType,
-      targetId,
-      status: passed ? 'PASS' : 'FAIL',
-      ruleTriggered,
-      reasoning,
-      outreachMessageId: targetType === 'OUTREACH' ? targetId : null,
-      createdAt: new Date().toISOString()
+    await prisma.complianceCheck.create({
+      data: {
+        targetType,
+        targetId,
+        status: passed ? 'PASS' : 'FAIL',
+        ruleTriggered,
+        reasoning,
+        outreachMessageId: targetType === 'OUTREACH' ? targetId : null,
+      }
     });
 
     // 2. Transition State
@@ -58,14 +62,18 @@ export const complianceProcessor = async (job: Job<ComplianceGateJob>) => {
       console.log(`[ComplianceAgent] ${targetType} ${targetId} PASS. Proceeding to ${nextStateIfPass}`);
       
       if (targetType === 'LEAD') {
-        await Collections.QualifiedLeads.doc(targetId).update({
-          pipelineState: nextStateIfPass,
-          updatedAt: new Date().toISOString()
+        await prisma.qualifiedLead.update({
+          where: { id: targetId },
+          data: {
+            pipelineState: nextStateIfPass,
+          }
         });
       } else if (targetType === 'OUTREACH') {
-        await Collections.OutreachMessages.doc(targetId).update({
-          status: nextStateIfPass,
-          updatedAt: new Date().toISOString()
+        await prisma.outreachMessage.update({
+          where: { id: targetId },
+          data: {
+            status: nextStateIfPass,
+          }
         });
       }
 
@@ -73,15 +81,19 @@ export const complianceProcessor = async (job: Job<ComplianceGateJob>) => {
     } else {
       console.log(`[ComplianceAgent] ${targetType} ${targetId} FAIL. Rule: ${ruleTriggered}`);
       if (targetType === 'LEAD') {
-        await Collections.QualifiedLeads.doc(targetId).update({
-          pipelineState: 'NEEDS_REVIEW',
-          status: 'NEEDS_REVIEW',
-          updatedAt: new Date().toISOString()
+        await prisma.qualifiedLead.update({
+          where: { id: targetId },
+          data: {
+            pipelineState: 'NEEDS_REVIEW',
+            status: 'NEEDS_REVIEW',
+          }
         });
       } else if (targetType === 'OUTREACH') {
-        await Collections.OutreachMessages.doc(targetId).update({
-          status: 'FAILED',
-          updatedAt: new Date().toISOString()
+        await prisma.outreachMessage.update({
+          where: { id: targetId },
+          data: {
+            status: 'FAILED',
+          }
         });
       }
     }

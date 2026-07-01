@@ -1,7 +1,7 @@
 import { Job } from 'bullmq';
-import { MarketResearchJob, MarketSegmentData } from '../../shared/types';
+import { MarketResearchJob } from '../../shared/types';
 import { PipelineOrchestrator } from '../../orchestration/pipeline';
-import { Collections } from '../../shared/db/firebase';
+import { prisma } from '../../config/database';
 
 export const marketResearchProcessor = async (job: Job<MarketResearchJob>) => {
   const { segmentId, icpDefinition } = job.data;
@@ -9,10 +9,11 @@ export const marketResearchProcessor = async (job: Job<MarketResearchJob>) => {
 
   try {
     // 1. Fetch Segment
-    const segmentRef = Collections.MarketSegments.doc(segmentId);
-    const segmentDoc = await segmentRef.get();
+    const segment = await prisma.marketSegment.findUnique({
+      where: { id: segmentId }
+    });
     
-    if (!segmentDoc.exists) {
+    if (!segment) {
       throw new Error(`Segment ${segmentId} not found`);
     }
 
@@ -26,10 +27,12 @@ export const marketResearchProcessor = async (job: Job<MarketResearchJob>) => {
     const confidenceScore = 0.85;
 
     // 3. Update the database
-    await segmentRef.update({
-      insights,
-      confidenceScore,
-      updatedAt: new Date().toISOString()
+    await prisma.marketSegment.update({
+      where: { id: segmentId },
+      data: {
+        insights,
+        confidenceScore,
+      }
     });
 
     // 4. Transition to Buyer Discovery
@@ -38,7 +41,6 @@ export const marketResearchProcessor = async (job: Job<MarketResearchJob>) => {
     return { success: true, segmentId };
   } catch (error: any) {
     console.error(`[MarketResearchAgent] Failed: ${error.message}`);
-    // Halting pipeline transition here, leaving it in RESEARCHING or moving to FAILED
     await PipelineOrchestrator.transition('MARKET_SEGMENT', segmentId, 'RESEARCHING', 'FAILED');
     throw error;
   }
