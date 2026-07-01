@@ -25,6 +25,7 @@ import { datasetsRoutes } from './modules/datasets/datasets.routes';
 import { tradeDataRoutes } from './modules/tradedata/tradedata.routes';
 import { tradeDataInternalRoutes } from './modules/tradedata/tradedata.internal.routes';
 import { settingsRoutes } from './modules/settings/settings.routes';
+import pipelineRoutes from './api/routes/pipelineRoutes';
 
 export const createApp = () => {
   const app = express();
@@ -99,6 +100,7 @@ export const createApp = () => {
   app.use(`${BASE}/datasets`, datasetsRoutes);
   app.use(`${BASE}/tradedata`, tradeDataRoutes);
   app.use(`${BASE}/settings`, settingsRoutes);
+  app.use(`${BASE}/pipeline`, pipelineRoutes);
 
   // ─── Internal Agent Routes (no auth – Python microservice only) ─────────────
   // These routes are called by the Python AI agent (no user JWT available).
